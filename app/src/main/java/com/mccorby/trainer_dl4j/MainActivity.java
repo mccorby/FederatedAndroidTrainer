@@ -28,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int BATCH_SIZE = 100;
 
 
-
     private static final String TAG = MainActivity.class.getSimpleName();
     private ExecutorService executor;
     private TextView loggingArea;
@@ -92,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 double result = model.score();
-                                String message = "Score at iteration " + iterCount + " is " + result;
+                                String message = "\nScore at iteration " + iterCount + " is " + result;
                                 Log.d("LinearModel", message);
 
                                 loggingArea.append(message);
@@ -108,7 +107,12 @@ public class MainActivity extends AppCompatActivity {
                 DataSource dataSource = new SumDataSource();
                 linearModel.train(dataSource.getTrainingData(BATCH_SIZE, new Random(SEED)));
                 Log.d(TAG, "Train finished");
-                predictBtn.setEnabled(true);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        predictBtn.setEnabled(true);
+                    }
+                });
             }
         });
     }
