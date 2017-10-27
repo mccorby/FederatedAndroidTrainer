@@ -1,4 +1,4 @@
-package com.mccorby.trainer_dl4j;
+package com.mccorby.federatedlearning;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
