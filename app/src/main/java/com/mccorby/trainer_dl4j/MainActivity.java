@@ -7,15 +7,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.mccorby.trainer_dl4j.datasource.DataSource;
 import com.mccorby.trainer_dl4j.datasource.SumDataSource;
 import com.mccorby.trainer_dl4j.model.LinearModel;
+import com.mccorby.trainer_dl4j.server.FederatedServer;
 
 import org.deeplearning4j.nn.api.Model;
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.optimize.api.IterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,13 +31,17 @@ public class MainActivity extends AppCompatActivity {
     //Batch size: i.e., each epoch has nSamples/BATCH_SIZE parameter updates
     private static final int BATCH_SIZE = 100;
 
-
     private static final String TAG = MainActivity.class.getSimpleName();
     private ExecutorService executor;
     private TextView loggingArea;
     private LinearModel linearModel;
     private TextView predictTxt;
     private Button predictBtn;
+
+    private FederatedServer federatedServer;
+    private int nModels;
+    private List<LinearModel> models;
+    private SumDataSource trainerDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,16 +64,35 @@ public class MainActivity extends AppCompatActivity {
                 predict();
             }
         });
+
+        Button updateModelsBtn = (Button) findViewById(R.id.update_models_btn);
+        updateModelsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                federatedServer.sendUpdatedGradient();
+            }
+        });
+
         predictTxt = (TextView) findViewById(R.id.predict_txt);
         executor = Executors.newSingleThreadExecutor();
+        trainerDataSource = new SumDataSource();
+
+        federatedServer = new FederatedServer();
+        models = new ArrayList<>();
     }
 
     private void predict() {
         final INDArray input = Nd4j.create(new double[]{0.111111, 0.3333333333333}, new int[]{1, 2});
         INDArray predict = linearModel.predict(input);
         String message = "PREDICTION for " + input + " => " + predict;
-        Log.d(TAG, message);
         predictTxt.setText(message);
+
+        for (LinearModel model: models) {
+            Log.d(TAG, "PREDICTION for " + input + " => " + model.predict(input));
+            double score = model.score(trainerDataSource.getTestData(BATCH_SIZE, new Random(SEED)));
+
+            Log.d(TAG, "Score for " + model.getId() + " => " + score);
+        }
     }
 
     private void train() {
@@ -100,12 +127,15 @@ public class MainActivity extends AppCompatActivity {
                         });
                     }
                 };
-
-                linearModel = new LinearModel(iterationListener, SEED);
+                Gradient averageGradient = federatedServer.getAverageGradient();
+                linearModel = new LinearModel("Model" + nModels++, iterationListener, (SEED + nModels), averageGradient);
+                federatedServer.registerModel(linearModel);
+                models.add(linearModel);
                 Log.d(TAG, "Starting training");
                 linearModel.buildModel();
-                DataSource dataSource = new SumDataSource();
-                linearModel.train(dataSource.getTrainingData(BATCH_SIZE, new Random(SEED)));
+                Log.d(TAG, "Model built");
+                // TODO Train should start with any gradients already in the server?
+                linearModel.train(trainerDataSource.getTrainingData(BATCH_SIZE, new Random(SEED + nModels)));
                 Log.d(TAG, "Train finished");
                 runOnUiThread(new Runnable() {
                     @Override
@@ -113,8 +143,20 @@ public class MainActivity extends AppCompatActivity {
                         predictBtn.setEnabled(true);
                     }
                 });
+
+                sendGradientToServer(linearModel.getGradient());
             }
         });
+    }
+
+    private void sendGradientToServer(Gradient gradient) {
+        federatedServer.pushGradient(gradient);
+    }
+
+    private void sendGradientToServer(INDArray gradient) throws IOException {
+        byte[] gradientBytes = Nd4j.toByteArray(gradient);
+        // Send the bytes to the server
+        federatedServer.pushGradient(gradientBytes);
     }
 
 }
