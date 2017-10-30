@@ -77,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
 
         predictTxt = (TextView) findViewById(R.id.predict_txt);
         executor = Executors.newSingleThreadExecutor();
-        trainerDataSource = new IrisDataSource(getIrisFile());
 
         federatedServer = new FederatedServer();
         models = new ArrayList<>();
@@ -149,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 Log.d(TAG, "Model built");
                 // TODO Train should start with any gradients already in the server?
+                trainerDataSource = new IrisDataSource(getIrisFile(), (nModels - 1) % 3);
                 irisModel.train(trainerDataSource);
                 Log.d(TAG, "Train finished");
                 runOnUiThread(new Runnable() {

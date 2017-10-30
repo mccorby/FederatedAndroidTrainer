@@ -65,11 +65,12 @@ public class IrisModel implements FederatedModel {
 
     public String evaluate(TrainerDataSource dataSource) {
         //evaluate the model on the test set
-        Evaluation eval = new Evaluation(3);
         DataSet testData = dataSource.getTestData(150, 1235);
+        double score = model.score(testData);
+        Evaluation eval = new Evaluation(3);
         INDArray output = model.output(testData.getFeatureMatrix());
         eval.eval(testData.getLabels(), output);
-        return eval.stats();
+        return eval.stats() + "\n\nScore: " + score;
     }
 
     @Override

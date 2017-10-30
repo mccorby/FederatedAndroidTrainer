@@ -1,9 +1,7 @@
 package com.mccorby.trainer_dl4j.datasource;
 
-import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 
 import java.util.Collections;
@@ -22,7 +20,7 @@ public class SumDataSource implements TrainerDataSource {
     private static final int MAX_RANGE = 3;
 
     @Override
-    public DataSetIterator getTrainingData(int batchSize, int seed) {
+    public DataSet getTrainingData(int batchSize, int seed) {
         Random rand = new Random(seed);
         double[] sum = new double[N_SAMPLES];
         double[] input1 = new double[N_SAMPLES];
@@ -39,7 +37,9 @@ public class SumDataSource implements TrainerDataSource {
         DataSet dataSet = new DataSet(inputNDArray, outPut);
         List<DataSet> listDs = dataSet.asList();
         Collections.shuffle(listDs, rand);
-        return new ListDataSetIterator(listDs, batchSize);
+//        return new ListDataSetIterator(listDs, batchSize);
+        dataSet.shuffle();
+        return dataSet;
     }
 
     @Override

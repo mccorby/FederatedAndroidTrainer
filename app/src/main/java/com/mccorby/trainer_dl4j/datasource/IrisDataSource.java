@@ -4,7 +4,6 @@ import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
 import org.datavec.api.split.InputStreamInputSplit;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
-import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.SplitTestAndTrain;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
@@ -13,25 +12,26 @@ import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 
 public class IrisDataSource implements TrainerDataSource {
 
+    private static final String TAG = IrisDataSource.class.getSimpleName();
     private InputStream mDataFile;
+    private int mDistributedOrder;
     private DataSet trainingData;
     private DataSet testData;
     private int batchSize;
 
-    public IrisDataSource(InputStream dataFile) {
-
+    public IrisDataSource(InputStream dataFile, int distributedOrder) {
         mDataFile = dataFile;
+        mDistributedOrder = distributedOrder;
     }
 
     private void createDataSource() throws IOException, InterruptedException {
         //First: get the dataset using the record reader. CSVRecordReader handles loading/parsing
         int numLinesToSkip = 0;
         String delimiter = ",";
-        RecordReader recordReader = new CSVRecordReader(numLinesToSkip,delimiter);
+        RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
         recordReader.initialize(new InputStreamInputSplit(mDataFile));
 
         //Second: the RecordReaderDataSetIterator handles conversion to DataSet objects, ready for use in neural network
@@ -39,10 +39,27 @@ public class IrisDataSource implements TrainerDataSource {
         int numClasses = 3;     //3 classes (types of iris flowers) in the iris data set. Classes have integer values 0, 1 or 2
         batchSize = 150;    //Iris data set: 150 examples total. We are loading all of them into one DataSet (not recommended for large data sets)
 
-        DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader,batchSize,labelIndex,numClasses);
+        DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numClasses);
         DataSet allData = iterator.next();
+
         allData.shuffle();
-        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.65);  //Use 65% of data for training
+        org.nd4j.linalg.dataset.api.DataSet result;
+        switch (mDistributedOrder) {
+            case 0:
+                result = allData.getRange(0, 49);
+                break;
+            case 1:
+                result = allData.getRange(50, 99);
+                break;
+            case 2:
+                result = allData.getRange(100, 149);
+                break;
+            default:
+                result = allData;
+                break;
+        }
+
+        SplitTestAndTrain testAndTrain = result.splitTestAndTrain(0.65);  //Use 65% of data for training
 
         trainingData = testAndTrain.getTrain();
         testData = testAndTrain.getTest();
@@ -55,7 +72,7 @@ public class IrisDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSetIterator getTrainingData(int batchSize, int seed) {
+    public DataSet getTrainingData(int batchSize, int seed) {
         if (trainingData == null) {
             try {
                 createDataSource();
@@ -65,9 +82,9 @@ public class IrisDataSource implements TrainerDataSource {
                 e.printStackTrace();
             }
         }
-
-        List<DataSet> listDs = trainingData.asList();
-        return new ListDataSetIterator(listDs, this.batchSize);
+        return trainingData;
+//        List<DataSet> listDs = trainingData.asList();
+//        return new ListDataSetIterator(listDs, this.batchSize);
     }
 
     @Override
