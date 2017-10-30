@@ -1,8 +1,8 @@
-package com.mccorby.federatedlearning.model;
+package com.mccorby.federatedlearning.core.domain.model;
 
 import android.util.Log;
 
-import com.mccorby.federatedlearning.datasource.TrainerDataSource;
+import com.mccorby.federatedlearning.datasource.FederatedDataSource;
 
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -80,8 +80,9 @@ public class LinearModel implements FederatedModel {
         mNetwork.setListeners(mIterationListener);
     }
 
-    public void train(TrainerDataSource dataSource) {
-        DataSet trainingData = dataSource.getTrainingData(BATCH_SIZE);
+    @Override
+    public void train(FederatedDataSource dataSource) {
+        DataSet trainingData = (DataSet) dataSource.getTrainingData(BATCH_SIZE).getNativeDataSet();
         List<DataSet> listDs = trainingData.asList();
         DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
 
@@ -93,8 +94,8 @@ public class LinearModel implements FederatedModel {
     }
 
     @Override
-    public String evaluate(TrainerDataSource trainerDataSource) {
-        DataSet testData = trainerDataSource.getTrainingData(BATCH_SIZE);
+    public String evaluate(FederatedDataSource federatedDataSource) {
+        DataSet testData = (DataSet) federatedDataSource.getTrainingData(BATCH_SIZE).getNativeDataSet();
         List<DataSet> listDs = testData.asList();
         DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
 

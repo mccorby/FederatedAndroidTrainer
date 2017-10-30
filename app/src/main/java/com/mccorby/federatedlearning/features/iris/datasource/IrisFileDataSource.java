@@ -1,4 +1,8 @@
-package com.mccorby.federatedlearning.datasource;
+package com.mccorby.federatedlearning.features.iris.datasource;
+
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+import com.mccorby.federatedlearning.datasource.FederatedDataSetImpl;
+import com.mccorby.federatedlearning.datasource.FederatedDataSource;
 
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
@@ -13,16 +17,16 @@ import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class IrisDataSource implements TrainerDataSource {
+public class IrisFileDataSource implements FederatedDataSource {
 
-    private static final String TAG = IrisDataSource.class.getSimpleName();
+    private static final String TAG = IrisFileDataSource.class.getSimpleName();
     private InputStream mDataFile;
     private int mDistributedOrder;
     private DataSet trainingData;
     private DataSet testData;
     private int batchSize;
 
-    public IrisDataSource(InputStream dataFile, int distributedOrder) {
+    public IrisFileDataSource(InputStream dataFile, int distributedOrder) {
         mDataFile = dataFile;
         mDistributedOrder = distributedOrder;
     }
@@ -44,22 +48,24 @@ public class IrisDataSource implements TrainerDataSource {
 
         allData.shuffle();
         org.nd4j.linalg.dataset.api.DataSet result;
-        switch (mDistributedOrder) {
-            case 0:
-                result = allData.getRange(0, 49);
-                break;
-            case 1:
-                result = allData.getRange(50, 99);
-                break;
-            case 2:
-                result = allData.getRange(100, 149);
-                break;
-            default:
-                result = allData;
-                break;
-        }
+//        switch (mDistributedOrder) {
+//            case 0:
+//                result = allData.getRange(0, 49);
+//                break;
+//            case 1:
+//                result = allData.getRange(50, 99);
+//                break;
+//            case 2:
+//                result = allData.getRange(100, 149);
+//                break;
+//            default:
+//                result = allData;
+//                break;
+//        }
 
-        SplitTestAndTrain testAndTrain = result.splitTestAndTrain(0.65);  //Use 65% of data for training
+        result = allData.filterBy(new int[]{mDistributedOrder});
+
+        SplitTestAndTrain testAndTrain = result.splitTestAndTrain(0.80);  //Use 65% of data for training
 
         trainingData = testAndTrain.getTrain();
         testData = testAndTrain.getTest();
@@ -72,7 +78,7 @@ public class IrisDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSet getTrainingData(int batchSize) {
+    public FederatedDataSet getTrainingData(int batchSize) {
         if (trainingData == null) {
             try {
                 createDataSource();
@@ -82,11 +88,11 @@ public class IrisDataSource implements TrainerDataSource {
                 e.printStackTrace();
             }
         }
-        return trainingData;
+        return new FederatedDataSetImpl(trainingData);
     }
 
     @Override
-    public DataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData(int batchSize) {
         if (testData == null) {
             try {
                 createDataSource();
@@ -96,6 +102,11 @@ public class IrisDataSource implements TrainerDataSource {
                 e.printStackTrace();
             }
         }
-        return testData;
+        return new FederatedDataSetImpl(testData);
+    }
+
+    @Override
+    public FederatedDataSet getCrossValidationData(int batchSize) {
+        return null;
     }
 }

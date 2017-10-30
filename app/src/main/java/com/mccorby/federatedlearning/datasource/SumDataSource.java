@@ -1,14 +1,14 @@
 package com.mccorby.federatedlearning.datasource;
 
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
-public class SumDataSource implements TrainerDataSource {
+public class SumDataSource implements FederatedDataSource {
 
     //Number of data points
     private static final int N_SAMPLES = 1000;
@@ -26,7 +26,7 @@ public class SumDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSet getTrainingData(int batchSize) {
+    public FederatedDataSet getTrainingData(int batchSize) {
         Random rand = new Random(seed);
         double[] sum = new double[N_SAMPLES];
         double[] input1 = new double[N_SAMPLES];
@@ -41,15 +41,12 @@ public class SumDataSource implements TrainerDataSource {
         INDArray inputNDArray = Nd4j.hstack(inputNDArray1, inputNDArray2);
         INDArray outPut = Nd4j.create(sum, new int[]{N_SAMPLES, 1});
         DataSet dataSet = new DataSet(inputNDArray, outPut);
-        List<DataSet> listDs = dataSet.asList();
-        Collections.shuffle(listDs, rand);
-//        return new ListDataSetIterator(listDs, batchSize);
         dataSet.shuffle();
-        return dataSet;
+        return new FederatedDataSetImpl(dataSet);
     }
 
     @Override
-    public DataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData(int batchSize) {
         Random rand = new Random(seed);
         int numSamples = N_SAMPLES/10;
         double[] sum = new double[numSamples];
@@ -64,6 +61,11 @@ public class SumDataSource implements TrainerDataSource {
         INDArray inputNDArray2 = Nd4j.create(input2, new int[]{numSamples, 1});
         INDArray inputNDArray = Nd4j.hstack(inputNDArray1, inputNDArray2);
         INDArray outPut = Nd4j.create(sum, new int[]{numSamples, 1});
-        return new DataSet(inputNDArray, outPut);
+        return new FederatedDataSetImpl(new DataSet(inputNDArray, outPut));
+    }
+
+    @Override
+    public FederatedDataSet getCrossValidationData(int batchSize) {
+        return null;
     }
 }

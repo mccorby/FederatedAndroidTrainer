@@ -2,7 +2,7 @@ package com.mccorby.federatedlearning.server;
 
 import android.util.Log;
 
-import com.mccorby.federatedlearning.model.FederatedModel;
+import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
 import org.deeplearning4j.nn.gradient.DefaultGradient;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -29,6 +29,12 @@ public class FederatedServer {
     private Gradient averageGradient;
     private List<Gradient> gradients;
     private DefaultGradient aggr;
+    private Logger logger;
+
+    public FederatedServer(Logger logger) {
+
+        this.logger = logger;
+    }
 
     public void registerModel(FederatedModel model) {
         if (registeredModels == null) {
@@ -57,6 +63,7 @@ public class FederatedServer {
     public void sendUpdatedGradient() {
         for (FederatedModel model: registeredModels) {
 //            model.updateWeights(averageFlattenGradient);
+            logger.log("Updating gradient for " + model.getId());
             model.updateWeights(averageGradient);
         }
     }

@@ -43,5 +43,6 @@ dependencies {
     compile 'org.nd4j:nd4j-native:0.7.2'
     compile 'org.nd4j:nd4j-native:0.7.2:android-arm'
     testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.7.22'
     compile 'org.slf4j:slf4j-android:1.7.25'
 }

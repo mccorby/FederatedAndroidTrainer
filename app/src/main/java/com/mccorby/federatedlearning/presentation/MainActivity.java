@@ -1,4 +1,4 @@
-package com.mccorby.federatedlearning;
+package com.mccorby.federatedlearning.presentation;
 
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -8,11 +8,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.mccorby.federatedlearning.datasource.IrisDataSource;
-import com.mccorby.federatedlearning.datasource.TrainerDataSource;
-import com.mccorby.federatedlearning.model.FederatedModel;
-import com.mccorby.federatedlearning.model.IrisModel;
+import com.mccorby.federatedlearning.R;
+import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource;
+import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
+import com.mccorby.federatedlearning.features.iris.model.IrisModel;
 import com.mccorby.federatedlearning.server.FederatedServer;
+import com.mccorby.federatedlearning.server.Logger;
 
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -39,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private FederatedServer federatedServer;
     private int nModels;
     private List<FederatedModel> models;
-    private TrainerDataSource trainerDataSource;
+    private FederatedDataSource mFederatedDataSource;
     private FederatedModel currentModel;
 
     private IterationListener iterationListener =  new IterationListener() {
@@ -105,7 +107,12 @@ public class MainActivity extends AppCompatActivity {
         predictTxt = (TextView) findViewById(R.id.predict_txt);
         executor = Executors.newSingleThreadExecutor();
 
-        federatedServer = new FederatedServer();
+        federatedServer = new FederatedServer(new Logger() {
+            @Override
+            public void log(String message) {
+                Log.d(TAG, message);
+            }
+        });
         models = new ArrayList<>();
     }
 
@@ -121,10 +128,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void predict() {
         // Show the current model evaluation
-        predictTxt.setText(currentModel.evaluate(trainerDataSource));
+        predictTxt.setText(currentModel.evaluate(mFederatedDataSource));
 
         for (FederatedModel model: models) {
-            String score = model.evaluate(trainerDataSource);
+            String score = model.evaluate(mFederatedDataSource);
             Log.d(TAG, "Score for " + model.getId() + " => " + score);
         }
     }
@@ -145,8 +152,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 Log.d(TAG, "Model built");
                 // TODO Train should start with any gradients already in the server?
-                trainerDataSource = new IrisDataSource(getIrisFile(), (nModels - 1) % 3);
-                currentModel.train(trainerDataSource);
+                mFederatedDataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
+                currentModel.train(mFederatedDataSource);
                 Log.d(TAG, "Train finished");
                 runOnUiThread(new Runnable() {
                     @Override

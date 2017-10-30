@@ -1,11 +1,8 @@
 package com.mccorby.federatedlearning.datasource;
 
-import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
-import org.nd4j.linalg.dataset.DataSet;
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 
-import java.io.IOException;
-
-public class MNISTDataSource implements TrainerDataSource {
+public class MNISTDataSource implements FederatedDataSource {
 
     private int seed;
 
@@ -15,18 +12,17 @@ public class MNISTDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSet getTrainingData(int batchSize) {
-        MnistDataSetIterator trainingData = null;
-        try {
-            trainingData = new MnistDataSetIterator(batchSize, true, seed);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public FederatedDataSet getTrainingData(int batchSize) {
         return null;
     }
 
     @Override
-    public DataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData(int batchSize) {
+        return null;
+    }
+
+    @Override
+    public FederatedDataSet getCrossValidationData(int batchSize) {
         return null;
     }
 }

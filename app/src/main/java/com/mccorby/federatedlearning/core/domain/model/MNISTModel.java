@@ -1,8 +1,8 @@
-package com.mccorby.federatedlearning.model;
+package com.mccorby.federatedlearning.core.domain.model;
 
 import android.util.Log;
 
-import com.mccorby.federatedlearning.datasource.TrainerDataSource;
+import com.mccorby.federatedlearning.datasource.FederatedDataSource;
 
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
@@ -85,8 +85,8 @@ public class MNISTModel implements FederatedModel {
     }
 
     @Override
-    public String evaluate(TrainerDataSource trainerDataSource) {
-        DataSet testData = trainerDataSource.getTrainingData(BATCH_SIZE);
+    public String evaluate(FederatedDataSource federatedDataSource) {
+        DataSet testData = (DataSet) federatedDataSource.getTrainingData(BATCH_SIZE).getNativeDataSet();
         List<DataSet> listDs = testData.asList();
         DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
 
@@ -101,8 +101,8 @@ public class MNISTModel implements FederatedModel {
     }
 
     @Override
-    public void train(TrainerDataSource trainerDataSource) {
-        DataSet trainingData = trainerDataSource.getTrainingData(BATCH_SIZE);
+    public void train(FederatedDataSource federatedDataSource) {
+        DataSet trainingData = (DataSet) federatedDataSource.getTrainingData(BATCH_SIZE).getNativeDataSet();
         List<DataSet> listDs = trainingData.asList();
         DataSetIterator mnistTrain = new ListDataSetIterator(listDs, BATCH_SIZE);
         for (int i = 0; i < N_EPOCHS; i++) {

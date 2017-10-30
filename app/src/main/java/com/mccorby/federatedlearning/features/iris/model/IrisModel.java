@@ -1,6 +1,7 @@
-package com.mccorby.federatedlearning.model;
+package com.mccorby.federatedlearning.features.iris.model;
 
-import com.mccorby.federatedlearning.datasource.TrainerDataSource;
+import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -61,18 +62,20 @@ public class IrisModel implements FederatedModel {
 
     }
 
-    public void train(TrainerDataSource trainingData) {
-        model.fit(trainingData.getTrainingData(BATCH_SIZE));
+    @Override
+    public void train(FederatedDataSource trainingData) {
+        model.fit((DataSet) trainingData.getTrainingData(BATCH_SIZE).getNativeDataSet());
     }
 
-    public String evaluate(TrainerDataSource dataSource) {
+    @Override
+    public String evaluate(FederatedDataSource dataSource) {
         //evaluate the model on the test set
-        DataSet testData = dataSource.getTestData(BATCH_SIZE);
+        DataSet testData = (DataSet) dataSource.getTestData(BATCH_SIZE).getNativeDataSet();
         double score = model.score(testData);
         Evaluation eval = new Evaluation(NUM_CLASSES);
         INDArray output = model.output(testData.getFeatureMatrix());
         eval.eval(testData.getLabels(), output);
-        return eval.stats() + "\n\nScore: " + score;
+        return "Score: " + score;
     }
 
     @Override
@@ -95,6 +98,7 @@ public class IrisModel implements FederatedModel {
         model.update(averageGradient);
     }
 
+    @Override
     public Gradient getGradient() {
         return model.gradient();
     }
