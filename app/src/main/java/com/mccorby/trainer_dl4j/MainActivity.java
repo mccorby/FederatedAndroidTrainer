@@ -1,5 +1,6 @@
 package com.mccorby.trainer_dl4j;
 
+import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -7,8 +8,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.mccorby.trainer_dl4j.datasource.SumDataSource;
-import com.mccorby.trainer_dl4j.model.LinearModel;
+import com.mccorby.trainer_dl4j.datasource.IrisDataSource;
+import com.mccorby.trainer_dl4j.datasource.TrainerDataSource;
+import com.mccorby.trainer_dl4j.model.IrisModel;
 import com.mccorby.trainer_dl4j.server.FederatedServer;
 
 import org.deeplearning4j.nn.api.Model;
@@ -18,9 +20,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,14 +36,14 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private ExecutorService executor;
     private TextView loggingArea;
-    private LinearModel linearModel;
     private TextView predictTxt;
     private Button predictBtn;
 
     private FederatedServer federatedServer;
     private int nModels;
-    private List<LinearModel> models;
-    private SumDataSource trainerDataSource;
+    private List<IrisModel> models;
+    private TrainerDataSource trainerDataSource;
+    private IrisModel irisModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,22 +77,30 @@ public class MainActivity extends AppCompatActivity {
 
         predictTxt = (TextView) findViewById(R.id.predict_txt);
         executor = Executors.newSingleThreadExecutor();
-        trainerDataSource = new SumDataSource();
+        trainerDataSource = new IrisDataSource(getIrisFile());
 
         federatedServer = new FederatedServer();
         models = new ArrayList<>();
     }
 
+    private InputStream getIrisFile() {
+        AssetManager am = getAssets();
+        try {
+            return  am.open("iris.csv");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private void predict() {
-        final INDArray input = Nd4j.create(new double[]{0.111111, 0.3333333333333}, new int[]{1, 2});
-        INDArray predict = linearModel.predict(input);
-        String message = "PREDICTION for " + input + " => " + predict;
-        predictTxt.setText(message);
-
-        for (LinearModel model: models) {
-            Log.d(TAG, "PREDICTION for " + input + " => " + model.predict(input));
-            double score = model.score(trainerDataSource.getTestData(BATCH_SIZE, new Random(SEED)));
-
+//        final INDArray input = Nd4j.create(new double[]{0.111111, 0.3333333333333}, new int[]{1, 2});
+//        INDArray predict = irisModel.predict(input);
+//        String message = "PREDICTION for " + input + " => " + predict;
+//        predictTxt.setText(message);
+//
+        for (IrisModel model: models) {
+            String score = model.evaluate(trainerDataSource);
             Log.d(TAG, "Score for " + model.getId() + " => " + score);
         }
     }
@@ -119,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 double result = model.score();
                                 String message = "\nScore at iteration " + iterCount + " is " + result;
-                                Log.d("LinearModel", message);
+                                Log.d("irisModel", message);
 
                                 loggingArea.append(message);
                                 iterCount++;
@@ -128,14 +138,18 @@ public class MainActivity extends AppCompatActivity {
                     }
                 };
                 Gradient averageGradient = federatedServer.getAverageGradient();
-                linearModel = new LinearModel("Model" + nModels++, iterationListener, (SEED + nModels), averageGradient);
-                federatedServer.registerModel(linearModel);
-                models.add(linearModel);
+                irisModel = new IrisModel("Model" + nModels++, iterationListener);
+                federatedServer.registerModel(irisModel);
+                models.add(irisModel);
                 Log.d(TAG, "Starting training");
-                linearModel.buildModel();
+                try {
+                    irisModel.buildModel();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 Log.d(TAG, "Model built");
                 // TODO Train should start with any gradients already in the server?
-                linearModel.train(trainerDataSource.getTrainingData(BATCH_SIZE, new Random(SEED + nModels)));
+                irisModel.train(trainerDataSource);
                 Log.d(TAG, "Train finished");
                 runOnUiThread(new Runnable() {
                     @Override
@@ -144,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-                sendGradientToServer(linearModel.getGradient());
+                sendGradientToServer(irisModel.getGradient());
             }
         });
     }

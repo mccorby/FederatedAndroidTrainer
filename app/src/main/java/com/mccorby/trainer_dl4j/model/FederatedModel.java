@@ -12,4 +12,10 @@ public interface FederatedModel {
     INDArray getGradientAsArray();
 
     void updateWeights(Gradient averageGradient);
+
+    Gradient getGradient();
+
+    void buildModel();
+
+    // TODO String evaluate() or <T> evaluate
 }

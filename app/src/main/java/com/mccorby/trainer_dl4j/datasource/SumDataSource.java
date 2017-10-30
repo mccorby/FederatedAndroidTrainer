@@ -22,7 +22,8 @@ public class SumDataSource implements TrainerDataSource {
     private static final int MAX_RANGE = 3;
 
     @Override
-    public DataSetIterator getTrainingData(int batchSize, Random rand) {
+    public DataSetIterator getTrainingData(int batchSize, int seed) {
+        Random rand = new Random(seed);
         double[] sum = new double[N_SAMPLES];
         double[] input1 = new double[N_SAMPLES];
         double[] input2 = new double[N_SAMPLES];
@@ -42,7 +43,8 @@ public class SumDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSet getTestData(int batchSize, Random rand) {
+    public DataSet getTestData(int batchSize, int seed) {
+        Random rand = new Random(seed);
         int numSamples = N_SAMPLES/10;
         double[] sum = new double[numSamples];
         double[] input1 = new double[numSamples];
