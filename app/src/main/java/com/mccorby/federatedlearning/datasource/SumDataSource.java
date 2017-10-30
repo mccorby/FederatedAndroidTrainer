@@ -1,4 +1,4 @@
-package com.mccorby.trainer_dl4j.datasource;
+package com.mccorby.federatedlearning.datasource;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -18,9 +18,15 @@ public class SumDataSource implements TrainerDataSource {
     // also try changing the range along with changing the activation function
     private static final int MIN_RANGE = 0;
     private static final int MAX_RANGE = 3;
+    private int seed;
+
+    public SumDataSource(int seed) {
+
+        this.seed = seed;
+    }
 
     @Override
-    public DataSet getTrainingData(int batchSize, int seed) {
+    public DataSet getTrainingData(int batchSize) {
         Random rand = new Random(seed);
         double[] sum = new double[N_SAMPLES];
         double[] input1 = new double[N_SAMPLES];
@@ -43,7 +49,7 @@ public class SumDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSet getTestData(int batchSize, int seed) {
+    public DataSet getTestData(int batchSize) {
         Random rand = new Random(seed);
         int numSamples = N_SAMPLES/10;
         double[] sum = new double[numSamples];

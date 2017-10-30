@@ -1,7 +1,10 @@
-package com.mccorby.trainer_dl4j.model;
+package com.mccorby.federatedlearning.model;
 
 import android.util.Log;
 
+import com.mccorby.federatedlearning.datasource.TrainerDataSource;
+
+import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -19,9 +22,15 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import java.util.List;
+
 public class MNISTModel implements FederatedModel {
 
     private static final String TAG = MNISTModel.class.getSimpleName();
+    private static final int BATCH_SIZE = 64;
+    private static final int OUTPUT_NUM = 10;
+    private static final int N_EPOCHS = 200;
+
     private String mId;
     private IterationListener mIterationListener;
     private MultiLayerNetwork model;
@@ -37,8 +46,6 @@ public class MNISTModel implements FederatedModel {
         //number of rows and columns in the input pictures
         final int numRows = 28;
         final int numColumns = 28;
-        int outputNum = 10; // number of output classes
-        int batchSize = 64; // batch size for each epoch
         int rngSeed = 123; // random number seed for reproducibility
         int numEpochs = 15; // number of epochs to perform
         double rate = 0.0015; // learning rate
@@ -65,7 +72,7 @@ public class MNISTModel implements FederatedModel {
                 .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD) //create hidden layer
                         .activation(Activation.SOFTMAX)
                         .nIn(100)
-                        .nOut(outputNum)
+                        .nOut(OUTPUT_NUM)
                         .build())
                 .pretrain(false).backprop(true) //use backpropagation to adjust weights
                 .build();
@@ -77,22 +84,28 @@ public class MNISTModel implements FederatedModel {
         Log.d(TAG, "****************Example finished********************");
     }
 
-    public void evaluate(int outputNum, DataSetIterator mnistTest) {
-        Log.d(TAG, "Evaluate model....");
-        Evaluation eval = new Evaluation(outputNum); //create an evaluation object with 10 possible classes
-        while (mnistTest.hasNext()) {
-            DataSet next = mnistTest.next();
+    @Override
+    public String evaluate(TrainerDataSource trainerDataSource) {
+        DataSet testData = trainerDataSource.getTrainingData(BATCH_SIZE);
+        List<DataSet> listDs = testData.asList();
+        DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
+
+        Evaluation eval = new Evaluation(OUTPUT_NUM); //create an evaluation object with 10 possible classes
+        while (iterator.hasNext()) {
+            DataSet next = iterator.next();
             INDArray output = model.output(next.getFeatureMatrix()); //get the networks prediction
             eval.eval(next.getLabels(), output); //check the prediction against the true class
         }
 
-        Log.d(TAG, eval.stats());
+        return eval.stats();
     }
 
-    public void train(int numEpochs, DataSetIterator mnistTrain) {
-        Log.d(TAG, "Train model....");
-        for (int i = 0; i < numEpochs; i++) {
-            Log.d(TAG, "Epoch " + i);
+    @Override
+    public void train(TrainerDataSource trainerDataSource) {
+        DataSet trainingData = trainerDataSource.getTrainingData(BATCH_SIZE);
+        List<DataSet> listDs = trainingData.asList();
+        DataSetIterator mnistTrain = new ListDataSetIterator(listDs, BATCH_SIZE);
+        for (int i = 0; i < N_EPOCHS; i++) {
             model.fit(mnistTrain);
         }
     }

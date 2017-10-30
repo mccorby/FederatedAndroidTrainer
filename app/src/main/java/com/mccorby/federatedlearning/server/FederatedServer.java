@@ -1,8 +1,8 @@
-package com.mccorby.trainer_dl4j.server;
+package com.mccorby.federatedlearning.server;
 
 import android.util.Log;
 
-import com.mccorby.trainer_dl4j.model.FederatedModel;
+import com.mccorby.federatedlearning.model.FederatedModel;
 
 import org.deeplearning4j.nn.gradient.DefaultGradient;
 import org.deeplearning4j.nn.gradient.Gradient;

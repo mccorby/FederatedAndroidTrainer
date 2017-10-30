@@ -1,7 +1,10 @@
-package com.mccorby.trainer_dl4j.model;
+package com.mccorby.federatedlearning.model;
 
 import android.util.Log;
 
+import com.mccorby.federatedlearning.datasource.TrainerDataSource;
+
+import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
@@ -18,6 +21,7 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -31,6 +35,7 @@ public class LinearModel implements FederatedModel {
     private static final double LEARNING_RATE = 0.01;
 
     private static final String TAG = LinearModel.class.getSimpleName();
+    private static final int BATCH_SIZE = 150;
 
     private IterationListener mIterationListener;
     private final String mId;
@@ -75,12 +80,25 @@ public class LinearModel implements FederatedModel {
         mNetwork.setListeners(mIterationListener);
     }
 
-    public void train(DataSetIterator iterator) {
+    public void train(TrainerDataSource dataSource) {
+        DataSet trainingData = dataSource.getTrainingData(BATCH_SIZE);
+        List<DataSet> listDs = trainingData.asList();
+        DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
+
         //Train the network on the full data set, and evaluate in periodically
         for (int i = 0; i < N_EPOCHS; i++) {
             iterator.reset();
             mNetwork.fit(iterator);
         }
+    }
+
+    @Override
+    public String evaluate(TrainerDataSource trainerDataSource) {
+        DataSet testData = trainerDataSource.getTrainingData(BATCH_SIZE);
+        List<DataSet> listDs = testData.asList();
+        DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
+
+        return mNetwork.evaluate(iterator).stats();
     }
 
     public INDArray predict(final INDArray input) {

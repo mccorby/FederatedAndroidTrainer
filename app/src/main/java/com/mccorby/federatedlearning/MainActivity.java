@@ -1,4 +1,4 @@
-package com.mccorby.trainer_dl4j;
+package com.mccorby.federatedlearning;
 
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -8,10 +8,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.mccorby.trainer_dl4j.datasource.IrisDataSource;
-import com.mccorby.trainer_dl4j.datasource.TrainerDataSource;
-import com.mccorby.trainer_dl4j.model.IrisModel;
-import com.mccorby.trainer_dl4j.server.FederatedServer;
+import com.mccorby.federatedlearning.datasource.IrisDataSource;
+import com.mccorby.federatedlearning.datasource.TrainerDataSource;
+import com.mccorby.federatedlearning.model.FederatedModel;
+import com.mccorby.federatedlearning.model.IrisModel;
+import com.mccorby.federatedlearning.server.FederatedServer;
 
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -28,12 +29,8 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
-    //Random number generator SEED, for reproducability
-    private static final int SEED = 12345;
-    //Batch size: i.e., each epoch has nSamples/BATCH_SIZE parameter updates
-    private static final int BATCH_SIZE = 100;
-
     private static final String TAG = MainActivity.class.getSimpleName();
+
     private ExecutorService executor;
     private TextView loggingArea;
     private TextView predictTxt;
@@ -41,9 +38,39 @@ public class MainActivity extends AppCompatActivity {
 
     private FederatedServer federatedServer;
     private int nModels;
-    private List<IrisModel> models;
+    private List<FederatedModel> models;
     private TrainerDataSource trainerDataSource;
-    private IrisModel irisModel;
+    private FederatedModel currentModel;
+
+    private IterationListener iterationListener =  new IterationListener() {
+        int iterCount;
+
+        @Override
+        public boolean invoked() {
+            return false;
+        }
+
+        @Override
+        public void invoke() {
+
+        }
+
+        @Override
+        public void iterationDone(final Model model, int iteration) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    double result = model.score();
+                    String message = "\nScore at iteration " + iterCount + " is " + result;
+                    Log.d(TAG, message);
+
+                    loggingArea.append(message);
+                    iterCount++;
+                }
+            });
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,12 +120,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void predict() {
-//        final INDArray input = Nd4j.create(new double[]{0.111111, 0.3333333333333}, new int[]{1, 2});
-//        INDArray predict = irisModel.predict(input);
-//        String message = "PREDICTION for " + input + " => " + predict;
-//        predictTxt.setText(message);
-//
-        for (IrisModel model: models) {
+        // Show the current model evaluation
+        predictTxt.setText(currentModel.evaluate(trainerDataSource));
+
+        for (FederatedModel model: models) {
             String score = model.evaluate(trainerDataSource);
             Log.d(TAG, "Score for " + model.getId() + " => " + score);
         }
@@ -108,48 +133,20 @@ public class MainActivity extends AppCompatActivity {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                IterationListener iterationListener = new IterationListener() {
-                    int iterCount;
-
-                    @Override
-                    public boolean invoked() {
-                        return false;
-                    }
-
-                    @Override
-                    public void invoke() {
-
-                    }
-
-                    @Override
-                    public void iterationDone(final Model model, int iteration) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                double result = model.score();
-                                String message = "\nScore at iteration " + iterCount + " is " + result;
-                                Log.d("irisModel", message);
-
-                                loggingArea.append(message);
-                                iterCount++;
-                            }
-                        });
-                    }
-                };
                 Gradient averageGradient = federatedServer.getAverageGradient();
-                irisModel = new IrisModel("Model" + nModels++, iterationListener);
-                federatedServer.registerModel(irisModel);
-                models.add(irisModel);
+                currentModel = new IrisModel("Model" + nModels++, iterationListener);
+                federatedServer.registerModel(currentModel);
+                models.add(currentModel);
                 Log.d(TAG, "Starting training");
                 try {
-                    irisModel.buildModel();
+                    currentModel.buildModel();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 Log.d(TAG, "Model built");
                 // TODO Train should start with any gradients already in the server?
                 trainerDataSource = new IrisDataSource(getIrisFile(), (nModels - 1) % 3);
-                irisModel.train(trainerDataSource);
+                currentModel.train(trainerDataSource);
                 Log.d(TAG, "Train finished");
                 runOnUiThread(new Runnable() {
                     @Override
@@ -158,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-                sendGradientToServer(irisModel.getGradient());
+                sendGradientToServer(currentModel.getGradient());
             }
         });
     }

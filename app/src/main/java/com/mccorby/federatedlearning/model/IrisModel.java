@@ -1,6 +1,6 @@
-package com.mccorby.trainer_dl4j.model;
+package com.mccorby.federatedlearning.model;
 
-import com.mccorby.trainer_dl4j.datasource.TrainerDataSource;
+import com.mccorby.federatedlearning.datasource.TrainerDataSource;
 
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -18,6 +18,9 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 public class IrisModel implements FederatedModel {
 
+    private static final int BATCH_SIZE = 150;
+    private static final int NUM_CLASSES = 3;
+
     private MultiLayerNetwork model;
     private String id;
     private IterationListener iterationListener;
@@ -30,7 +33,6 @@ public class IrisModel implements FederatedModel {
 
     public void buildModel() {
         final int numInputs = 4;
-        int outputNum = 3;
         int iterations = 1000;
         long seed = 6;
 
@@ -48,7 +50,7 @@ public class IrisModel implements FederatedModel {
                         .build())
                 .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
                         .activation(Activation.SOFTMAX)
-                        .nIn(3).nOut(outputNum).build())
+                        .nIn(3).nOut(NUM_CLASSES).build())
                 .backprop(true).pretrain(false)
                 .build();
 
@@ -60,14 +62,14 @@ public class IrisModel implements FederatedModel {
     }
 
     public void train(TrainerDataSource trainingData) {
-        model.fit(trainingData.getTrainingData(150, 1234));
+        model.fit(trainingData.getTrainingData(BATCH_SIZE));
     }
 
     public String evaluate(TrainerDataSource dataSource) {
         //evaluate the model on the test set
-        DataSet testData = dataSource.getTestData(150, 1235);
+        DataSet testData = dataSource.getTestData(BATCH_SIZE);
         double score = model.score(testData);
-        Evaluation eval = new Evaluation(3);
+        Evaluation eval = new Evaluation(NUM_CLASSES);
         INDArray output = model.output(testData.getFeatureMatrix());
         eval.eval(testData.getLabels(), output);
         return eval.stats() + "\n\nScore: " + score;

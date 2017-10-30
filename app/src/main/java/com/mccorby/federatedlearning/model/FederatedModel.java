@@ -1,4 +1,6 @@
-package com.mccorby.trainer_dl4j.model;
+package com.mccorby.federatedlearning.model;
+
+import com.mccorby.federatedlearning.datasource.TrainerDataSource;
 
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -17,5 +19,8 @@ public interface FederatedModel {
 
     void buildModel();
 
-    // TODO String evaluate() or <T> evaluate
+    void train(TrainerDataSource trainerDataSource);
+
+    String evaluate(TrainerDataSource trainerDataSource);
+
 }

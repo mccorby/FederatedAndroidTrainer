@@ -1,4 +1,4 @@
-package com.mccorby.trainer_dl4j.datasource;
+package com.mccorby.federatedlearning.datasource;
 
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
@@ -72,7 +72,7 @@ public class IrisDataSource implements TrainerDataSource {
     }
 
     @Override
-    public DataSet getTrainingData(int batchSize, int seed) {
+    public DataSet getTrainingData(int batchSize) {
         if (trainingData == null) {
             try {
                 createDataSource();
@@ -83,12 +83,10 @@ public class IrisDataSource implements TrainerDataSource {
             }
         }
         return trainingData;
-//        List<DataSet> listDs = trainingData.asList();
-//        return new ListDataSetIterator(listDs, this.batchSize);
     }
 
     @Override
-    public DataSet getTestData(int batchSize, int seed) {
+    public DataSet getTestData(int batchSize) {
         if (testData == null) {
             try {
                 createDataSource();
