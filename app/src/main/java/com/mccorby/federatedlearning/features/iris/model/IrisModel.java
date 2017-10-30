@@ -28,38 +28,38 @@ public class IrisModel implements FederatedModel {
 
     public IrisModel(String id, IterationListener iterationListener) {
         this.id = id;
-
         this.iterationListener = iterationListener;
     }
 
     public void buildModel() {
-        final int numInputs = 4;
-        int iterations = 1000;
-        long seed = 6;
+        if (model == null) {
+            final int numInputs = 4;
+            int iterations = 1000;
+            long seed = 6;
 
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .seed(seed)
-                .iterations(iterations)
-                .activation(Activation.TANH)
-                .weightInit(WeightInit.XAVIER)
-                .learningRate(0.1)
-                .regularization(true).l2(1e-4)
-                .list()
-                .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(3)
-                        .build())
-                .layer(1, new DenseLayer.Builder().nIn(3).nOut(3)
-                        .build())
-                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-                        .activation(Activation.SOFTMAX)
-                        .nIn(3).nOut(NUM_CLASSES).build())
-                .backprop(true).pretrain(false)
-                .build();
+            MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                    .seed(seed)
+                    .iterations(iterations)
+                    .activation(Activation.TANH)
+                    .weightInit(WeightInit.XAVIER)
+                    .learningRate(0.1)
+                    .regularization(true).l2(1e-4)
+                    .list()
+                    .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(3)
+                            .build())
+                    .layer(1, new DenseLayer.Builder().nIn(3).nOut(3)
+                            .build())
+                    .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                            .activation(Activation.SOFTMAX)
+                            .nIn(3).nOut(NUM_CLASSES).build())
+                    .backprop(true).pretrain(false)
+                    .build();
 
-        //run the model
-        model = new MultiLayerNetwork(conf);
-        model.init();
-        model.setListeners(iterationListener);
-
+            //run the model
+            model = new MultiLayerNetwork(conf);
+            model.init();
+            model.setListeners(iterationListener);
+        }
     }
 
     @Override

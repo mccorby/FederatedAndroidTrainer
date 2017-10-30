@@ -17,13 +17,14 @@ public class IrisPresenterTest {
     public void testGetTrainingDataIsPassedToTheView() {
         // Given
         int batchSize = 64;
-        FederatedModel model = mock(FederatedModel.class);
         UseCaseExecutor executor = mock(UseCaseExecutor.class);
         FederatedDataSource dataSource = mock(FederatedDataSource.class);
+        IrisView view = mock(IrisView.class);
+        FederatedModel model = mock(FederatedModel.class);
 
         // When
-        IrisPresenter cut = new IrisPresenter(model, dataSource, executor, batchSize);
-        cut.retrieveTrainingData();
+        IrisPresenter cut = new IrisPresenter(view, model, dataSource, executor, batchSize);
+        cut.startProcess();
 
         // Then
         verify(executor).execute(any(GetIrisTrainingData.class));

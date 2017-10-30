@@ -9,10 +9,14 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.mccorby.federatedlearning.R;
-import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource;
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
+import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource;
 import com.mccorby.federatedlearning.features.iris.model.IrisModel;
+import com.mccorby.federatedlearning.features.iris.presentation.IrisPresenter;
+import com.mccorby.federatedlearning.features.iris.presentation.IrisView;
+import com.mccorby.federatedlearning.presentation.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.server.FederatedServer;
 import com.mccorby.federatedlearning.server.Logger;
 
@@ -26,14 +30,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements IrisView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private ExecutorService executor;
     private TextView loggingArea;
     private TextView predictTxt;
     private Button predictBtn;
@@ -41,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private FederatedServer federatedServer;
     private int nModels;
     private List<FederatedModel> models;
-    private FederatedDataSource mFederatedDataSource;
+    private FederatedDataSource dataSource;
     private FederatedModel currentModel;
 
     private IterationListener iterationListener =  new IterationListener() {
@@ -72,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     };
-
+    private DefaultUseCaseExecutor executor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,8 +107,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         predictTxt = (TextView) findViewById(R.id.predict_txt);
-        executor = Executors.newSingleThreadExecutor();
 
+        injectMembers();
+    }
+
+    private void injectMembers() {
         federatedServer = new FederatedServer(new Logger() {
             @Override
             public void log(String message) {
@@ -114,6 +119,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         models = new ArrayList<>();
+        executor = new DefaultUseCaseExecutor(Executors.newSingleThreadExecutor());
+    }
+
+    private IrisPresenter createPresenter() {
+        FederatedModel model = new IrisModel("Iris" + nModels++, iterationListener);
+        federatedServer.registerModel(model);
+
+        dataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
+        return new IrisPresenter(this, model, dataSource, executor, 64);
     }
 
     private InputStream getIrisFile() {
@@ -128,43 +142,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void predict() {
         // Show the current model evaluation
-        predictTxt.setText(currentModel.evaluate(mFederatedDataSource.getTestData(64)));
+        predictTxt.setText(currentModel.evaluate(dataSource.getTestData(64)));
 
         for (FederatedModel model: models) {
-            String score = model.evaluate(mFederatedDataSource.getTestData(64));
+            String score = model.evaluate(dataSource.getTestData(64));
             Log.d(TAG, "Score for " + model.getId() + " => " + score);
         }
     }
 
     private void train() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Gradient averageGradient = federatedServer.getAverageGradient();
-                currentModel = new IrisModel("Model" + nModels++, iterationListener);
-                federatedServer.registerModel(currentModel);
-                models.add(currentModel);
-                Log.d(TAG, "Starting training");
-                try {
-                    currentModel.buildModel();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                Log.d(TAG, "Model built");
-                // TODO Train should start with any gradients already in the server?
-                mFederatedDataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
-                currentModel.train(mFederatedDataSource.getTrainingData(64));
-                Log.d(TAG, "Train finished");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        predictBtn.setEnabled(true);
-                    }
-                });
-
-                sendGradientToServer(currentModel.getGradient());
-            }
-        });
+        predictBtn.setEnabled(false);
+        IrisPresenter presenter = createPresenter();
+        presenter.startProcess();
     }
 
     private void sendGradientToServer(Gradient gradient) {
@@ -177,4 +166,29 @@ public class MainActivity extends AppCompatActivity {
         federatedServer.pushGradient(gradientBytes);
     }
 
+    @Override
+    public void onTrainingDone(FederatedModel model) {
+        currentModel = model;
+        models.add(model);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                predictBtn.setEnabled(true);
+                predict();
+            }
+        });
+
+        // TODO This should be done by someone else, not by the view
+        sendGradientToServer(model.getGradient());
+    }
+
+    @Override
+    public void onDataReady(FederatedDataSet result) {
+        // TODO Probably not necessary. Check the tests
+    }
+
+    @Override
+    public void onError(String errorMessage) {
+
+    }
 }
