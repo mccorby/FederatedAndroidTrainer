@@ -1,6 +1,6 @@
 package com.mccorby.federatedlearning.features.iris.presentation;
 
-import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
 import com.mccorby.federatedlearning.datasource.FederatedDataSource;
 import com.mccorby.federatedlearning.features.iris.usecase.GetIrisTrainingData;
@@ -17,11 +17,12 @@ public class IrisPresenterTest {
     public void testGetTrainingDataIsPassedToTheView() {
         // Given
         int batchSize = 64;
+        FederatedModel model = mock(FederatedModel.class);
         UseCaseExecutor executor = mock(UseCaseExecutor.class);
         FederatedDataSource dataSource = mock(FederatedDataSource.class);
 
         // When
-        IrisPresenter cut = new IrisPresenter(dataSource, executor, batchSize);
+        IrisPresenter cut = new IrisPresenter(model, dataSource, executor, batchSize);
         cut.retrieveTrainingData();
 
         // Then

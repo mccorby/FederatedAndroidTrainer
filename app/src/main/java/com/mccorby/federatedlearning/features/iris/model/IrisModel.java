@@ -1,6 +1,6 @@
 package com.mccorby.federatedlearning.features.iris.model;
 
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
 import org.deeplearning4j.eval.Evaluation;
@@ -63,14 +63,14 @@ public class IrisModel implements FederatedModel {
     }
 
     @Override
-    public void train(FederatedDataSource trainingData) {
-        model.fit((DataSet) trainingData.getTrainingData(BATCH_SIZE).getNativeDataSet());
+    public void train(FederatedDataSet trainingData) {
+        model.fit((DataSet) trainingData.getNativeDataSet());
     }
 
     @Override
-    public String evaluate(FederatedDataSource dataSource) {
+    public String evaluate(FederatedDataSet federatedDataSet) {
         //evaluate the model on the test set
-        DataSet testData = (DataSet) dataSource.getTestData(BATCH_SIZE).getNativeDataSet();
+        DataSet testData = (DataSet) federatedDataSet.getNativeDataSet();
         double score = model.score(testData);
         Evaluation eval = new Evaluation(NUM_CLASSES);
         INDArray output = model.output(testData.getFeatureMatrix());

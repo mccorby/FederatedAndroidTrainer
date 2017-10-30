@@ -128,10 +128,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void predict() {
         // Show the current model evaluation
-        predictTxt.setText(currentModel.evaluate(mFederatedDataSource));
+        predictTxt.setText(currentModel.evaluate(mFederatedDataSource.getTestData(64)));
 
         for (FederatedModel model: models) {
-            String score = model.evaluate(mFederatedDataSource);
+            String score = model.evaluate(mFederatedDataSource.getTestData(64));
             Log.d(TAG, "Score for " + model.getId() + " => " + score);
         }
     }
@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Model built");
                 // TODO Train should start with any gradients already in the server?
                 mFederatedDataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
-                currentModel.train(mFederatedDataSource);
+                currentModel.train(mFederatedDataSource.getTrainingData(64));
                 Log.d(TAG, "Train finished");
                 runOnUiThread(new Runnable() {
                     @Override

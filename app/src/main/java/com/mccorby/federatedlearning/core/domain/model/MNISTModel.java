@@ -85,8 +85,8 @@ public class MNISTModel implements FederatedModel {
     }
 
     @Override
-    public String evaluate(FederatedDataSource federatedDataSource) {
-        DataSet testData = (DataSet) federatedDataSource.getTrainingData(BATCH_SIZE).getNativeDataSet();
+    public String evaluate(FederatedDataSet federatedDataSet) {
+        DataSet testData = (DataSet) federatedDataSet.getNativeDataSet();
         List<DataSet> listDs = testData.asList();
         DataSetIterator iterator = new ListDataSetIterator(listDs, BATCH_SIZE);
 
@@ -101,8 +101,8 @@ public class MNISTModel implements FederatedModel {
     }
 
     @Override
-    public void train(FederatedDataSource federatedDataSource) {
-        DataSet trainingData = (DataSet) federatedDataSource.getTrainingData(BATCH_SIZE).getNativeDataSet();
+    public void train(FederatedDataSet federatedDataSet) {
+        DataSet trainingData = (DataSet) federatedDataSet.getNativeDataSet();
         List<DataSet> listDs = trainingData.asList();
         DataSetIterator mnistTrain = new ListDataSetIterator(listDs, BATCH_SIZE);
         for (int i = 0; i < N_EPOCHS; i++) {

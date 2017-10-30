@@ -1,8 +1,8 @@
 package com.mccorby.federatedlearning.features.iris.usecase;
 
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,7 @@ public class TrainIrisModelTest {
     public void testModelIsTrained() {
         // Given
         FederatedModel model = mock(FederatedModel.class);
-        FederatedDataSource dataSource = mock(FederatedDataSource.class);
+        FederatedDataSet dataSource = mock(FederatedDataSet.class);
 
         // When
         TrainIrisModel cut = new TrainIrisModel(model, dataSource, useCaseCallback);

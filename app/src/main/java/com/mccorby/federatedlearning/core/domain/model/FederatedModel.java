@@ -1,7 +1,5 @@
 package com.mccorby.federatedlearning.core.domain.model;
 
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
-
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
@@ -19,8 +17,8 @@ public interface FederatedModel {
 
     void buildModel();
 
-    void train(FederatedDataSource federatedDataSource);
+    void train(FederatedDataSet federatedDataSet);
 
-    String evaluate(FederatedDataSource federatedDataSource);
+    String evaluate(FederatedDataSet federatedDataSet);
 
 }
