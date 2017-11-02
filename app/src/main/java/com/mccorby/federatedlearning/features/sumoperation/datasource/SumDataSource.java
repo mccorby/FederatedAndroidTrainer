@@ -1,6 +1,8 @@
-package com.mccorby.federatedlearning.datasource;
+package com.mccorby.federatedlearning.features.sumoperation.datasource;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
+import com.mccorby.federatedlearning.datasource.FederatedDataSetImpl;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;

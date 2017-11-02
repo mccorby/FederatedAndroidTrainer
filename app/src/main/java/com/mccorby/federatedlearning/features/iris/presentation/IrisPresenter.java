@@ -2,13 +2,25 @@ package com.mccorby.federatedlearning.features.iris.presentation;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
+import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
+import com.mccorby.federatedlearning.core.domain.usecase.SendGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
 import com.mccorby.federatedlearning.features.iris.usecase.GetIrisTrainingData;
 import com.mccorby.federatedlearning.features.iris.usecase.TrainIrisModel;
+
+import org.deeplearning4j.nn.gradient.Gradient;
+
+import java.util.concurrent.Executors;
+
+import io.reactivex.Observer;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 // TODO Reaching callback hell very soon. Think moving to RxJava
 // TODO Should FederatedModel be passed as a dependency or not?
@@ -16,20 +28,24 @@ public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
 
     private final IrisView view;
     private FederatedModel model;
-    private final FederatedDataSource dataSource;
+    private final FederatedRepository repository;
     private final UseCaseExecutor executor;
     private int batchSize;
 
-    public IrisPresenter(IrisView view, FederatedModel model, FederatedDataSource dataSource, UseCaseExecutor executor, int batchSize) {
+    public IrisPresenter(IrisView view,
+                         FederatedModel model,
+                         FederatedRepository repository,
+                         UseCaseExecutor executor,
+                         int batchSize) {
         this.view = view;
         this.model = model;
-        this.dataSource = dataSource;
         this.executor = executor;
+        this.repository = repository;
         this.batchSize = batchSize;
     }
 
     public void startProcess() {
-        UseCase useCase = new GetIrisTrainingData(this, dataSource, batchSize);
+        UseCase useCase = new GetIrisTrainingData(this, repository, batchSize);
         executor.execute(useCase);
     }
 
@@ -59,5 +75,32 @@ public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
 
     public void setModel(FederatedModel model) {
         this.model = model;
+    }
+
+    public void sendGradient(Gradient gradient) {
+        Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
+        Scheduler postScheduler = AndroidSchedulers.mainThread();
+        SendGradient sendGradient = new SendGradient(repository, model, origin, postScheduler);
+        sendGradient.execute(new Observer<Boolean>() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(@NonNull Boolean aBoolean) {
+                view.onGradientSent(aBoolean);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                view.onGradientSent(false);
+            }
+
+            @Override
+            public void onComplete() {
+                view.onGradientSent(true);
+            }
+        });
     }
 }

@@ -1,4 +1,4 @@
-package com.mccorby.federatedlearning.presentation;
+package com.mccorby.federatedlearning.app;
 
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -9,14 +9,21 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.mccorby.federatedlearning.R;
+import com.mccorby.federatedlearning.app.network.RetrofitServerService;
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
+import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
+import com.mccorby.federatedlearning.core.repository.FederatedNetworkDataSource;
+import com.mccorby.federatedlearning.core.repository.FederatedRepositoryImpl;
+import com.mccorby.federatedlearning.datasource.network.ServerDataSource;
+import com.mccorby.federatedlearning.datasource.network.ServerService;
+import com.mccorby.federatedlearning.datasource.network.mapper.NetworkMapper;
 import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource;
 import com.mccorby.federatedlearning.features.iris.model.IrisModel;
 import com.mccorby.federatedlearning.features.iris.presentation.IrisPresenter;
 import com.mccorby.federatedlearning.features.iris.presentation.IrisView;
-import com.mccorby.federatedlearning.presentation.executor.DefaultUseCaseExecutor;
+import com.mccorby.federatedlearning.app.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.server.FederatedServer;
 import com.mccorby.federatedlearning.server.Logger;
 
@@ -75,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         }
     };
     private DefaultUseCaseExecutor executor;
+    private IrisPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,7 +135,12 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         federatedServer.registerModel(model);
 
         dataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
-        return new IrisPresenter(this, model, dataSource, executor, 64);
+        String baseUrl = "http://192.168.0.33:9999/";
+        ServerService networkClient = RetrofitServerService.getNetworkClient(baseUrl);
+        NetworkMapper networkMapper = new NetworkMapper();
+        FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
+        FederatedRepository repository = new FederatedRepositoryImpl(dataSource, networkDataSource);
+        return new IrisPresenter(this, model, repository, executor, 64);
     }
 
     private InputStream getIrisFile() {
@@ -152,12 +165,13 @@ public class MainActivity extends AppCompatActivity implements IrisView {
 
     private void train() {
         predictBtn.setEnabled(false);
-        IrisPresenter presenter = createPresenter();
+        presenter = createPresenter();
         presenter.startProcess();
     }
 
     private void sendGradientToServer(Gradient gradient) {
-        federatedServer.pushGradient(gradient);
+
+        presenter.sendGradient(gradient);
     }
 
     private void sendGradientToServer(INDArray gradient) throws IOException {
@@ -190,5 +204,10 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     @Override
     public void onError(String errorMessage) {
 
+    }
+
+    @Override
+    public void onGradientSent(Boolean aBoolean) {
+        loggingArea.append("Gradient sent to server " + aBoolean);
     }
 }

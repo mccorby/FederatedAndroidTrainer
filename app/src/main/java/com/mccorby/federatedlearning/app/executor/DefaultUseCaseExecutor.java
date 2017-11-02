@@ -1,4 +1,4 @@
-package com.mccorby.federatedlearning.presentation.executor;
+package com.mccorby.federatedlearning.app.executor;
 
 import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;

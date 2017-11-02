@@ -1,8 +1,9 @@
 package com.mccorby.federatedlearning.features.iris.usecase;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -30,11 +31,12 @@ public class GetIrisTrainingDataTest {
         // Given
         int batchSize = 64;
         FederatedDataSource dataSource = mock(FederatedDataSource.class);
+        FederatedRepository repository = mock(FederatedRepository.class);
 
         given(dataSource.getTrainingData(batchSize)).willReturn(dataSet);
 
         // When
-        GetIrisTrainingData cut = new GetIrisTrainingData(useCaseCallback, dataSource, batchSize);
+        GetIrisTrainingData cut = new GetIrisTrainingData(useCaseCallback, repository, batchSize);
         cut.execute();
 
         // Then

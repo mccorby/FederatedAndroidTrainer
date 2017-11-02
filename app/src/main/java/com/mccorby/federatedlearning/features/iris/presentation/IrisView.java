@@ -10,4 +10,6 @@ public interface IrisView {
     void onDataReady(FederatedDataSet result);
 
     void onError(String errorMessage);
+
+    void onGradientSent(Boolean aBoolean);
 }

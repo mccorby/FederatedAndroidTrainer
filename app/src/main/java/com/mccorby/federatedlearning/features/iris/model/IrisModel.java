@@ -96,6 +96,8 @@ public class IrisModel implements FederatedModel {
     @Override
     public void updateWeights(Gradient averageGradient) {
         model.update(averageGradient);
+        INDArray params = model.params(true);
+        params.addi(averageGradient.gradient());
     }
 
     @Override

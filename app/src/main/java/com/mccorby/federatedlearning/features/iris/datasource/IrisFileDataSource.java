@@ -2,7 +2,7 @@ package com.mccorby.federatedlearning.features.iris.datasource;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.datasource.FederatedDataSetImpl;
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
 
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;

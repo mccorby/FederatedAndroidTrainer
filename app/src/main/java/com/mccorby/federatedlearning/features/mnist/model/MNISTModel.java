@@ -1,8 +1,9 @@
-package com.mccorby.federatedlearning.core.domain.model;
+package com.mccorby.federatedlearning.features.mnist.model;
 
 import android.util.Log;
 
-import com.mccorby.federatedlearning.datasource.FederatedDataSource;
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;

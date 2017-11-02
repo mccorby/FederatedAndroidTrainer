@@ -1,6 +1,7 @@
-package com.mccorby.federatedlearning.datasource;
+package com.mccorby.federatedlearning.features.mnist.datasource;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
+import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
 
 public class MNISTDataSource implements FederatedDataSource {
 

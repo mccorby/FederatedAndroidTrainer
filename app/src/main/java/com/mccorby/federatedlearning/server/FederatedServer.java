@@ -47,6 +47,7 @@ public class FederatedServer {
         // Doing a very simple and not correct average
         // In real life, we would keep a map with the gradients sent by each model
         // This way we could remove outliers
+
         if (averageFlattenGradient == null) {
             averageFlattenGradient = gradient;
         } else {
