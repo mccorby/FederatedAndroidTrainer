@@ -41,7 +41,6 @@ public class LinearModel implements FederatedModel {
     private IterationListener mIterationListener;
     private final String mId;
     private int mSeed;
-    private Gradient mServerGradient;
 
     private MultiLayerNetwork mNetwork;
 
@@ -49,7 +48,6 @@ public class LinearModel implements FederatedModel {
         mId = id;
         mIterationListener = iterationListener;
         mSeed = seed;
-        mServerGradient = serverGradient;
     }
 
     public void buildModel() {
@@ -111,20 +109,8 @@ public class LinearModel implements FederatedModel {
         return mNetwork.score(trainerDataSource);
     }
 
-    @Override
-    public INDArray getGradientAsArray() {
+    public INDArray getGradient() {
         return mNetwork.gradient().gradient();
-    }
-
-
-    public Gradient getGradient() {
-        return mNetwork.gradient();
-    }
-
-    @Override
-    public void updateWeights(Gradient remoteGradient) {
-        Log.d(TAG, "Remote Gradient " + remoteGradient);
-        mNetwork.update(remoteGradient);
     }
 
     @Override
@@ -148,6 +134,9 @@ public class LinearModel implements FederatedModel {
                 Log.d(TAG, "Size (" + i + ")" + entry.getValue().size(i));
             }
         }
+        Log.d(TAG, "Updating weights with INDArray object");
+        INDArray params = mNetwork.params(true);
+        params.addi(remoteGradient);
 
         /*
  0_W

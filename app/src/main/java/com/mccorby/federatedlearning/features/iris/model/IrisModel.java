@@ -1,5 +1,7 @@
 package com.mccorby.federatedlearning.features.iris.model;
 
+import android.util.Log;
+
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
@@ -8,7 +10,6 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.api.IterationListener;
@@ -16,6 +17,8 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+
+import static android.content.ContentValues.TAG;
 
 public class IrisModel implements FederatedModel {
 
@@ -85,23 +88,13 @@ public class IrisModel implements FederatedModel {
 
     @Override
     public void updateWeights(INDArray remoteGradient) {
-
-    }
-
-    @Override
-    public INDArray getGradientAsArray() {
-        return null;
-    }
-
-    @Override
-    public void updateWeights(Gradient averageGradient) {
-        model.update(averageGradient);
+        Log.d(TAG, "Updating weights with INDArray object");
         INDArray params = model.params(true);
-        params.addi(averageGradient.gradient());
+        params.addi(remoteGradient);
     }
 
     @Override
-    public Gradient getGradient() {
-        return model.gradient();
+    public INDArray getGradient() {
+        return model.gradient().gradient();
     }
 }

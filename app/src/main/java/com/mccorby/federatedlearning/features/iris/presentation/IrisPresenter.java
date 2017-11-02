@@ -3,6 +3,7 @@ package com.mccorby.federatedlearning.features.iris.presentation;
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
+import com.mccorby.federatedlearning.core.domain.usecase.RetrieveGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.SendGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
@@ -10,8 +11,6 @@ import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
 import com.mccorby.federatedlearning.features.iris.usecase.GetIrisTrainingData;
 import com.mccorby.federatedlearning.features.iris.usecase.TrainIrisModel;
-
-import org.deeplearning4j.nn.gradient.Gradient;
 
 import java.util.concurrent.Executors;
 
@@ -76,14 +75,38 @@ public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
         this.model = model;
     }
 
-    public void sendGradient(Gradient gradient) {
+    // TODO This method does not correspond to this object
+    public void sendGradient(byte[] gradient) {
         Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
         Scheduler postScheduler = AndroidSchedulers.mainThread();
-        SendGradient sendGradient = new SendGradient(repository, model, origin, postScheduler);
+        SendGradient sendGradient = new SendGradient(repository, gradient, origin, postScheduler);
         sendGradient.execute(new DisposableObserver<Boolean>() {
             @Override
             public void onNext(@NonNull Boolean aBoolean) {
                 view.onGradientSent(aBoolean);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+    // TODO This method does not correspond to this object
+    public void getUpdatedGradient() {
+        Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
+        Scheduler postScheduler = AndroidSchedulers.mainThread();
+        RetrieveGradient retrieveGradient = new RetrieveGradient(repository, origin, postScheduler);
+        retrieveGradient.execute(new DisposableObserver<byte[]>() {
+            @Override
+            public void onNext(@NonNull byte[] bytes) {
+                view.onGradientReceived(bytes);
             }
 
             @Override

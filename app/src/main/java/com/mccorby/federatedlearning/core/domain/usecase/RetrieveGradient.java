@@ -5,26 +5,24 @@ import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import io.reactivex.Observer;
 import io.reactivex.Scheduler;
 
-public class SendGradient implements UseCaseRx<Boolean> {
+public class RetrieveGradient implements UseCaseRx<byte[]> {
 
-    private FederatedRepository repository;
-    private byte[] gradient;
+    private final FederatedRepository repository;
     private final Scheduler originScheduler;
     private final Scheduler postScheduler;
 
-    public SendGradient(FederatedRepository repository, byte[] gradient,
-                        Scheduler originScheduler,
-                        Scheduler postScheduler) {
+    public RetrieveGradient(FederatedRepository repository,
+                            Scheduler originScheduler,
+                            Scheduler postScheduler) {
 
         this.repository = repository;
-        this.gradient = gradient;
         this.originScheduler = originScheduler;
         this.postScheduler = postScheduler;
     }
 
     @Override
-    public void execute(Observer<Boolean> observer) {
-        repository.uploadGradient(gradient)
+    public void execute(Observer<byte[]> observer) {
+        repository.retrieveGradient()
                 .subscribeOn(originScheduler)
                 .observeOn(postScheduler)
                 .subscribeWith(observer);

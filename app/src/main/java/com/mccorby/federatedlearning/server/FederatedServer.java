@@ -53,7 +53,7 @@ public class FederatedServer {
         } else {
             if (Arrays.equals(averageFlattenGradient.shape(), gradient.shape())) {
                 Log.d(TAG, "Updating average gradient");
-                averageFlattenGradient = averageFlattenGradient.add(gradient).div(2);
+                averageFlattenGradient.addi(gradient).divi(2);
             } else {
                 Log.d(TAG, "Gradients had different shapes");
             }
@@ -63,9 +63,9 @@ public class FederatedServer {
 
     public void sendUpdatedGradient() {
         for (FederatedModel model: registeredModels) {
-//            model.updateWeights(averageFlattenGradient);
+            model.updateWeights(averageFlattenGradient);
             logger.log("Updating gradient for " + model.getId());
-            model.updateWeights(averageGradient);
+//            model.updateWeights(averageGradient);
         }
     }
 
@@ -76,16 +76,6 @@ public class FederatedServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void pushGradient(Gradient gradient) {
-        if (averageGradient == null) {
-            averageGradient = gradient;
-        }
-        if (gradients == null) {
-            gradients = new ArrayList<>();
-        }
-        processGradient(gradient);
     }
 
     // TODO A valid gradient set should improve a model the server keeps. Do some research on this

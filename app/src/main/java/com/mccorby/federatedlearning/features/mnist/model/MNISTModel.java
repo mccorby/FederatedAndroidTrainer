@@ -13,7 +13,6 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.api.IterationListener;
@@ -122,17 +121,7 @@ public class MNISTModel implements FederatedModel {
     }
 
     @Override
-    public INDArray getGradientAsArray() {
-        return null;
-    }
-
-    @Override
-    public void updateWeights(Gradient averageGradient) {
-
-    }
-
-    @Override
-    public Gradient getGradient() {
-        return model.gradient();
+    public INDArray getGradient() {
+        return model.gradient().gradient();
     }
 }

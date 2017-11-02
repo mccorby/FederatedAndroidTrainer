@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.mccorby.federatedlearning.R;
+import com.mccorby.federatedlearning.app.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.app.network.RetrofitServerService;
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
@@ -23,16 +24,14 @@ import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource
 import com.mccorby.federatedlearning.features.iris.model.IrisModel;
 import com.mccorby.federatedlearning.features.iris.presentation.IrisPresenter;
 import com.mccorby.federatedlearning.features.iris.presentation.IrisView;
-import com.mccorby.federatedlearning.app.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.server.FederatedServer;
-import com.mccorby.federatedlearning.server.Logger;
 
 import org.deeplearning4j.nn.api.Model;
-import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.optimize.api.IterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -47,14 +46,12 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     private TextView predictTxt;
     private Button predictBtn;
 
-    private FederatedServer federatedServer;
     private int nModels;
     private List<FederatedModel> models;
     private FederatedDataSource dataSource;
     private FederatedModel currentModel;
 
     private IterationListener iterationListener =  new IterationListener() {
-        int iterCount;
 
         @Override
         public boolean invoked() {
@@ -67,16 +64,17 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         }
 
         @Override
-        public void iterationDone(final Model model, int iteration) {
+        public void iterationDone(final Model model, final int iteration) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    double result = model.score();
-                    String message = "\nScore at iteration " + iterCount + " is " + result;
-                    Log.d(TAG, message);
+                    if (iteration % 100 == 0) {
+                        double result = model.score();
+                        String message = "\nScore at iteration " + iteration + " is " + result;
+                        Log.d(TAG, message);
 
-                    loggingArea.append(message);
-                    iterCount++;
+                        loggingArea.append(message);
+                    }
                 }
             });
         }
@@ -110,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         updateModelsBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                federatedServer.sendUpdatedGradient();
+                presenter.getUpdatedGradient();
             }
         });
 
@@ -120,22 +118,16 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     }
 
     private void injectMembers() {
-        federatedServer = new FederatedServer(new Logger() {
-            @Override
-            public void log(String message) {
-                Log.d(TAG, message);
-            }
-        });
         models = new ArrayList<>();
         executor = new DefaultUseCaseExecutor(Executors.newSingleThreadExecutor());
     }
 
+    // TODO This to injectMembers
     private IrisPresenter createPresenter() {
         FederatedModel model = new IrisModel("Iris" + nModels++, iterationListener);
-        federatedServer.registerModel(model);
 
         dataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
-        String baseUrl = "http://192.168.0.33:9999/";
+        String baseUrl = "http://192.168.0.33:9998/";
         ServerService networkClient = RetrofitServerService.getNetworkClient(baseUrl);
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
@@ -159,7 +151,9 @@ public class MainActivity extends AppCompatActivity implements IrisView {
 
         for (FederatedModel model: models) {
             String score = model.evaluate(dataSource.getTestData(64));
-            Log.d(TAG, "Score for " + model.getId() + " => " + score);
+            String message = "Score for " + model.getId() + " => " + score;
+            Log.d(TAG, message);
+            loggingArea.append(message + "\n");
         }
     }
 
@@ -169,15 +163,14 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         presenter.startProcess();
     }
 
-    private void sendGradientToServer(Gradient gradient) {
-
-        presenter.sendGradient(gradient);
-    }
-
-    private void sendGradientToServer(INDArray gradient) throws IOException {
-        byte[] gradientBytes = Nd4j.toByteArray(gradient);
-        // Send the bytes to the server
-        federatedServer.pushGradient(gradientBytes);
+    private void sendGradientToServer() {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            Nd4j.write(outputStream, currentModel.getGradient());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        presenter.sendGradient(outputStream.toByteArray());
     }
 
     @Override
@@ -193,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         });
 
         // TODO This should be done by someone else, not by the view
-        sendGradientToServer(model.getGradient());
+        sendGradientToServer();
     }
 
     @Override
@@ -209,5 +202,19 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     @Override
     public void onGradientSent(Boolean aBoolean) {
         loggingArea.append("\n\nGradient sent to server " + aBoolean);
+    }
+
+    @Override
+    public void onGradientReceived(byte[] gradient) {
+        loggingArea.append("\n\nGradient received from server " + (gradient != null ? gradient.length : "null"));
+        try {
+            INDArray remoteGradient = Nd4j.fromByteArray(gradient);
+            for (FederatedModel model: models) {
+                model.updateWeights(remoteGradient);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

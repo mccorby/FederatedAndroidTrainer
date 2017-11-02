@@ -1,7 +1,6 @@
 package com.mccorby.federatedlearning.core.repository;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
-import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 
 import io.reactivex.Observable;
@@ -34,7 +33,13 @@ public class FederatedRepositoryImpl implements FederatedRepository {
     }
 
     @Override
-    public Observable<Boolean> uploadGradient(FederatedModel model) {
-        return networkDataSource.sendGradient(model);
+    public Observable<Boolean> uploadGradient(byte[] gradient) {
+        return networkDataSource.sendGradient(gradient);
+    }
+
+    @Override
+    public Observable<byte[]> retrieveGradient() {
+        return networkDataSource.retrieveGradient();
+
     }
 }

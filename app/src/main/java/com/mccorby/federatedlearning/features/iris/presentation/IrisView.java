@@ -12,4 +12,6 @@ public interface IrisView {
     void onError(String errorMessage);
 
     void onGradientSent(Boolean aBoolean);
+
+    void onGradientReceived(byte[] gradient);
 }
