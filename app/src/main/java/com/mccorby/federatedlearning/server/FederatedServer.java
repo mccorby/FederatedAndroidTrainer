@@ -2,7 +2,7 @@ package com.mccorby.federatedlearning.server;
 
 import android.util.Log;
 
-import com.mccorby.federatedlearning.model.FederatedModel;
+import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
 import org.deeplearning4j.nn.gradient.DefaultGradient;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -29,6 +29,12 @@ public class FederatedServer {
     private Gradient averageGradient;
     private List<Gradient> gradients;
     private DefaultGradient aggr;
+    private Logger logger;
+
+    public FederatedServer(Logger logger) {
+
+        this.logger = logger;
+    }
 
     public void registerModel(FederatedModel model) {
         if (registeredModels == null) {
@@ -41,12 +47,13 @@ public class FederatedServer {
         // Doing a very simple and not correct average
         // In real life, we would keep a map with the gradients sent by each model
         // This way we could remove outliers
+
         if (averageFlattenGradient == null) {
             averageFlattenGradient = gradient;
         } else {
             if (Arrays.equals(averageFlattenGradient.shape(), gradient.shape())) {
                 Log.d(TAG, "Updating average gradient");
-                averageFlattenGradient = averageFlattenGradient.add(gradient).div(2);
+                averageFlattenGradient.addi(gradient).divi(2);
             } else {
                 Log.d(TAG, "Gradients had different shapes");
             }
@@ -56,8 +63,9 @@ public class FederatedServer {
 
     public void sendUpdatedGradient() {
         for (FederatedModel model: registeredModels) {
-//            model.updateWeights(averageFlattenGradient);
-            model.updateWeights(averageGradient);
+            model.updateWeights(averageFlattenGradient);
+            logger.log("Updating gradient for " + model.getId());
+//            model.updateWeights(averageGradient);
         }
     }
 
@@ -68,16 +76,6 @@ public class FederatedServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void pushGradient(Gradient gradient) {
-        if (averageGradient == null) {
-            averageGradient = gradient;
-        }
-        if (gradients == null) {
-            gradients = new ArrayList<>();
-        }
-        processGradient(gradient);
     }
 
     // TODO A valid gradient set should improve a model the server keeps. Do some research on this
