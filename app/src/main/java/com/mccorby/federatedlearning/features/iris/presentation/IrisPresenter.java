@@ -15,11 +15,10 @@ import org.deeplearning4j.nn.gradient.Gradient;
 
 import java.util.concurrent.Executors;
 
-import io.reactivex.Observer;
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
 // TODO Reaching callback hell very soon. Think moving to RxJava
@@ -81,12 +80,7 @@ public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
         Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
         Scheduler postScheduler = AndroidSchedulers.mainThread();
         SendGradient sendGradient = new SendGradient(repository, model, origin, postScheduler);
-        sendGradient.execute(new Observer<Boolean>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-
-            }
-
+        sendGradient.execute(new DisposableObserver<Boolean>() {
             @Override
             public void onNext(@NonNull Boolean aBoolean) {
                 view.onGradientSent(aBoolean);
@@ -94,12 +88,12 @@ public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
 
             @Override
             public void onError(@NonNull Throwable e) {
-                view.onGradientSent(false);
+
             }
 
             @Override
             public void onComplete() {
-                view.onGradientSent(true);
+
             }
         });
     }

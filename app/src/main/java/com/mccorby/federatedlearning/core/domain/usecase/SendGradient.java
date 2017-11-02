@@ -28,6 +28,6 @@ public class SendGradient implements UseCaseRx<Boolean> {
         repository.uploadGradient(model)
                 .subscribeOn(originScheduler)
                 .observeOn(postScheduler)
-                .subscribe();
+                .subscribeWith(observer);
     }
 }

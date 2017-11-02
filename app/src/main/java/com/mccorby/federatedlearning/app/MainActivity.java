@@ -208,6 +208,6 @@ public class MainActivity extends AppCompatActivity implements IrisView {
 
     @Override
     public void onGradientSent(Boolean aBoolean) {
-        loggingArea.append("Gradient sent to server " + aBoolean);
+        loggingArea.append("\n\nGradient sent to server " + aBoolean);
     }
 }
