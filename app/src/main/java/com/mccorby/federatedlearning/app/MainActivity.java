@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.mccorby.federatedlearning.BuildConfig;
 import com.mccorby.federatedlearning.R;
 import com.mccorby.federatedlearning.app.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.app.network.RetrofitServerService;
@@ -20,11 +21,10 @@ import com.mccorby.federatedlearning.core.repository.FederatedRepositoryImpl;
 import com.mccorby.federatedlearning.datasource.network.ServerDataSource;
 import com.mccorby.federatedlearning.datasource.network.ServerService;
 import com.mccorby.federatedlearning.datasource.network.mapper.NetworkMapper;
-import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource;
-import com.mccorby.federatedlearning.features.iris.model.IrisModel;
+import com.mccorby.federatedlearning.features.diabetes.DiabetesFileDataSource;
+import com.mccorby.federatedlearning.features.diabetes.model.DiabetesModel;
 import com.mccorby.federatedlearning.features.iris.presentation.IrisPresenter;
 import com.mccorby.federatedlearning.features.iris.presentation.IrisView;
-import com.mccorby.federatedlearning.server.FederatedServer;
 
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.optimize.api.IterationListener;
@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity implements IrisView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int BATCH_SIZE = 64;
 
     private TextView loggingArea;
     private TextView predictTxt;
@@ -81,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     };
     private DefaultUseCaseExecutor executor;
     private IrisPresenter presenter;
+    private FederatedDataSet testDataSet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,21 +126,30 @@ public class MainActivity extends AppCompatActivity implements IrisView {
 
     // TODO This to injectMembers
     private IrisPresenter createPresenter() {
-        FederatedModel model = new IrisModel("Iris" + nModels++, iterationListener);
+        // TODO Please move this somewhere else inmmediately after testing it works!
+        // For diabetes
+        int numInputs = 11;
+        int numOutputs = 1;
+        // For iris
+//        int numInputs = 4;
+//        int numOutputs = 3;
 
-        dataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % 3);
-        String baseUrl = "http://192.168.0.33:9998/";
+        FederatedModel model = new DiabetesModel("Diabetes" + nModels++, numInputs, numOutputs, iterationListener);
+//        FederatedModel model = new IrisModel("Iris" + nModels++, numInputs, numOutputs, iterationListener);
+
+        dataSource = new DiabetesFileDataSource(getIrisFile(), (nModels - 1) % 3);
+        String baseUrl = BuildConfig.API_URL;
         ServerService networkClient = RetrofitServerService.getNetworkClient(baseUrl);
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
         FederatedRepository repository = new FederatedRepositoryImpl(dataSource, networkDataSource);
-        return new IrisPresenter(this, model, repository, executor, 64);
+        return new IrisPresenter(this, model, repository, executor, BATCH_SIZE);
     }
 
     private InputStream getIrisFile() {
         AssetManager am = getAssets();
         try {
-            return  am.open("iris.csv");
+            return  am.open("diabetes.csv");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -147,13 +158,13 @@ public class MainActivity extends AppCompatActivity implements IrisView {
 
     private void predict() {
         // Show the current model evaluation
-        predictTxt.setText(currentModel.evaluate(dataSource.getTestData(64)));
+        predictTxt.setText(currentModel.evaluate(testDataSet));
 
         for (FederatedModel model: models) {
-            String score = model.evaluate(dataSource.getTestData(64));
-            String message = "Score for " + model.getId() + " => " + score;
+            String score = model.evaluate(testDataSet);
+            String message = "\nScore for " + model.getId() + " => " + score;
             Log.d(TAG, message);
-            loggingArea.append(message + "\n");
+            loggingArea.append(message);
         }
     }
 
@@ -190,8 +201,12 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     }
 
     @Override
-    public void onDataReady(FederatedDataSet result) {
+    public void onDataReady(FederatedRepository result) {
         // TODO Probably not necessary. Check the tests
+        if (testDataSet == null) {
+            testDataSet = result.getTestData(BATCH_SIZE);
+        }
+
     }
 
     @Override

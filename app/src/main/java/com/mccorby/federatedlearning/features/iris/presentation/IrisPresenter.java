@@ -1,6 +1,5 @@
 package com.mccorby.federatedlearning.features.iris.presentation;
 
-import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import com.mccorby.federatedlearning.core.domain.usecase.RetrieveGradient;
@@ -22,7 +21,7 @@ import io.reactivex.schedulers.Schedulers;
 
 // TODO Reaching callback hell very soon. Think moving to RxJava
 // TODO Should FederatedModel be passed as a dependency or not?
-public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
+public class IrisPresenter implements UseCaseCallback<FederatedRepository>{
 
     private final IrisView view;
     private FederatedModel model;
@@ -48,9 +47,9 @@ public class IrisPresenter implements UseCaseCallback<FederatedDataSet>{
     }
 
     @Override
-    public void onSuccess(FederatedDataSet result) {
+    public void onSuccess(FederatedRepository result) {
         view.onDataReady(result);
-        UseCase useCase = new TrainIrisModel(model, result, new UseCaseCallback<Boolean>() {
+        UseCase useCase = new TrainIrisModel(model, result.getTrainingData(batchSize), new UseCaseCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 if (result != null && result) {

@@ -13,9 +13,8 @@ android {
         multiDexEnabled true
     }
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        debug {
+            buildConfigField 'String', 'API_URL', '"http://192.168.0.70:9998/"'
         }
     }
 

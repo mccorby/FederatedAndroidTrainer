@@ -1,13 +1,13 @@
 package com.mccorby.federatedlearning.features.iris.presentation;
 
-import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
+import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 
 public interface IrisView {
 
     void onTrainingDone(FederatedModel model);
 
-    void onDataReady(FederatedDataSet result);
+    void onDataReady(FederatedRepository result);
 
     void onError(String errorMessage);
 

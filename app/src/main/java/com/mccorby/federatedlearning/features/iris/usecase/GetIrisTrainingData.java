@@ -9,10 +9,10 @@ import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 
 public class GetIrisTrainingData implements UseCase {
     private final FederatedRepository repository;
-    private UseCaseCallback<FederatedDataSet> useCaseCallback;
+    private UseCaseCallback<FederatedRepository> useCaseCallback;
     private int batchSize;
 
-    public GetIrisTrainingData(UseCaseCallback<FederatedDataSet> useCaseCallback,
+    public GetIrisTrainingData(UseCaseCallback<FederatedRepository> useCaseCallback,
                                FederatedRepository repository,
                                int batchSize) {
         this.useCaseCallback = useCaseCallback;
@@ -25,7 +25,7 @@ public class GetIrisTrainingData implements UseCase {
     public void execute() {
         FederatedDataSet trainingData = repository.getTrainingData(batchSize);
         if (trainingData != null) {
-            useCaseCallback.onSuccess(trainingData);
+            useCaseCallback.onSuccess(repository);
         } else {
             useCaseCallback.onError(new UseCaseError());
         }

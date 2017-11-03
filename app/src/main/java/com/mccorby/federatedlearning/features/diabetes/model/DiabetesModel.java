@@ -1,11 +1,11 @@
-package com.mccorby.federatedlearning.features.iris.model;
+package com.mccorby.federatedlearning.features.diabetes.model;
 
 import android.util.Log;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 
-import org.deeplearning4j.eval.Evaluation;
+import org.deeplearning4j.eval.RegressionEvaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
@@ -20,7 +20,7 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import static android.content.ContentValues.TAG;
 
-public class IrisModel implements FederatedModel {
+public class DiabetesModel implements FederatedModel {
 
     private MultiLayerNetwork model;
     private String id;
@@ -28,7 +28,7 @@ public class IrisModel implements FederatedModel {
     private final int numClasses;
     private IterationListener iterationListener;
 
-    public IrisModel(String id, int numInputs, int numClasses, IterationListener iterationListener) {
+    public DiabetesModel(String id, int numInputs, int numClasses, IterationListener iterationListener) {
         this.id = id;
         this.numInputs = numInputs;
         this.numClasses = numClasses;
@@ -52,7 +52,7 @@ public class IrisModel implements FederatedModel {
                             .build())
                     .layer(1, new DenseLayer.Builder().nIn(3).nOut(3)
                             .build())
-                    .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                    .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MEAN_SQUARED_LOGARITHMIC_ERROR)
                             .activation(Activation.SOFTMAX)
                             .nIn(3).nOut(numClasses).build())
                     .backprop(true).pretrain(false)
@@ -74,11 +74,10 @@ public class IrisModel implements FederatedModel {
     public String evaluate(FederatedDataSet federatedDataSet) {
         //evaluate the model on the test set
         DataSet testData = (DataSet) federatedDataSet.getNativeDataSet();
-        double score = model.score(testData);
-        Evaluation eval = new Evaluation(numClasses);
+        RegressionEvaluation eval = new RegressionEvaluation(12);
         INDArray output = model.output(testData.getFeatureMatrix());
         eval.eval(testData.getLabels(), output);
-        return "Score: " + score;
+        return "MSE: " + eval.meanSquaredError(11);
     }
 
     @Override
