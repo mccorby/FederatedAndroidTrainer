@@ -1,20 +1,17 @@
-package com.mccorby.federatedlearning.features.iris.usecase;
+package com.mccorby.federatedlearning.core.domain.usecase;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
-import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
-import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
-import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 
 
-public class GetIrisTrainingData implements UseCase {
+public class GetTrainingData implements UseCase {
     private final FederatedRepository repository;
     private UseCaseCallback<FederatedRepository> useCaseCallback;
     private int batchSize;
 
-    public GetIrisTrainingData(UseCaseCallback<FederatedRepository> useCaseCallback,
-                               FederatedRepository repository,
-                               int batchSize) {
+    public GetTrainingData(UseCaseCallback<FederatedRepository> useCaseCallback,
+                           FederatedRepository repository,
+                           int batchSize) {
         this.useCaseCallback = useCaseCallback;
 
         this.repository = repository;

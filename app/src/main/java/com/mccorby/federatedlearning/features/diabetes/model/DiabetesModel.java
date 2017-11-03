@@ -77,7 +77,7 @@ public class DiabetesModel implements FederatedModel {
         RegressionEvaluation eval = new RegressionEvaluation(12);
         INDArray output = model.output(testData.getFeatureMatrix());
         eval.eval(testData.getLabels(), output);
-        return "MSE: " + eval.meanSquaredError(11);
+        return "MSE: " + eval.meanSquaredError(11) + "\nScore: " + model.score();
     }
 
     @Override

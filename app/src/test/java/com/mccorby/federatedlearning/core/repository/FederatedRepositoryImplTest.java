@@ -1,7 +1,6 @@
 package com.mccorby.federatedlearning.core.repository;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
-import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 
 import org.junit.Before;
@@ -11,7 +10,6 @@ import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class FederatedRepositoryImplTest {
@@ -73,12 +71,12 @@ public class FederatedRepositoryImplTest {
     @Test
     public void testGradientIsSentToServer() {
         // Given
-        FederatedModel model = mock(FederatedModel.class);
+        byte[] gradient = new byte[]{};
 
         // When
-        cut.uploadGradient(model);
+        cut.uploadGradient(gradient);
 
         // Then
-        verify(networkDataSource).sendGradient(model);
+        verify(networkDataSource).sendGradient(gradient);
     }
 }

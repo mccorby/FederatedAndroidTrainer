@@ -1,25 +1,23 @@
-package com.mccorby.federatedlearning.features.iris.usecase;
+package com.mccorby.federatedlearning.core.domain.usecase;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
-import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
 import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
-public class GetIrisTrainingDataTest {
+public class GetTrainingDataTest {
 
     @Mock
     private FederatedDataSet dataSet;
     @Mock
-    private UseCaseCallback<FederatedDataSet> useCaseCallback;
+    private UseCaseCallback<FederatedRepository> useCaseCallback;
 
     @Before
     public void setUp() {
@@ -30,17 +28,18 @@ public class GetIrisTrainingDataTest {
     public void testGetTrainingData() {
         // Given
         int batchSize = 64;
-        FederatedDataSource dataSource = mock(FederatedDataSource.class);
-        FederatedRepository repository = mock(FederatedRepository.class);
+        FederatedDataSource dataSource = Mockito.mock(FederatedDataSource.class);
+        FederatedRepository repository = Mockito.mock(FederatedRepository.class);
 
         given(dataSource.getTrainingData(batchSize)).willReturn(dataSet);
+        given(repository.getTrainingData(batchSize)).willReturn(dataSet);
 
         // When
-        GetIrisTrainingData cut = new GetIrisTrainingData(useCaseCallback, repository, batchSize);
+        GetTrainingData cut = new GetTrainingData(useCaseCallback, repository, batchSize);
         cut.execute();
 
         // Then
-        verify(dataSource).getTrainingData(batchSize);
-        verify(useCaseCallback).onSuccess(dataSet);
+        Mockito.verify(repository).getTrainingData(batchSize);
+        Mockito.verify(useCaseCallback).onSuccess(repository);
     }
 }

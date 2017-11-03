@@ -1,9 +1,9 @@
-package com.mccorby.federatedlearning.features.iris.presentation;
+package com.mccorby.federatedlearning.app.presentation;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 
-public interface IrisView {
+public interface TrainerView {
 
     void onTrainingDone(FederatedModel model);
 

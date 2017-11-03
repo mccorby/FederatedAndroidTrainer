@@ -1,8 +1,7 @@
-package com.mccorby.federatedlearning.features.iris.usecase;
+package com.mccorby.federatedlearning.core.domain.usecase;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
-import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +11,7 @@ import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class TrainIrisModelTest {
+public class TrainModelTest {
 
     @Mock
     private UseCaseCallback<Boolean> useCaseCallback;
@@ -29,7 +28,7 @@ public class TrainIrisModelTest {
         FederatedDataSet dataSource = mock(FederatedDataSet.class);
 
         // When
-        TrainIrisModel cut = new TrainIrisModel(model, dataSource, useCaseCallback);
+        TrainModel cut = new TrainModel(model, dataSource, useCaseCallback);
         cut.execute();
 
         // Then

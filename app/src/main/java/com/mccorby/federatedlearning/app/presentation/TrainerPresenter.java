@@ -1,4 +1,4 @@
-package com.mccorby.federatedlearning.features.iris.presentation;
+package com.mccorby.federatedlearning.app.presentation;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
@@ -8,8 +8,8 @@ import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
-import com.mccorby.federatedlearning.features.iris.usecase.GetIrisTrainingData;
-import com.mccorby.federatedlearning.features.iris.usecase.TrainIrisModel;
+import com.mccorby.federatedlearning.core.domain.usecase.GetTrainingData;
+import com.mccorby.federatedlearning.core.domain.usecase.TrainModel;
 
 import java.util.concurrent.Executors;
 
@@ -21,19 +21,19 @@ import io.reactivex.schedulers.Schedulers;
 
 // TODO Reaching callback hell very soon. Think moving to RxJava
 // TODO Should FederatedModel be passed as a dependency or not?
-public class IrisPresenter implements UseCaseCallback<FederatedRepository>{
+public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
-    private final IrisView view;
+    private final TrainerView view;
     private FederatedModel model;
     private final FederatedRepository repository;
     private final UseCaseExecutor executor;
     private int batchSize;
 
-    public IrisPresenter(IrisView view,
-                         FederatedModel model,
-                         FederatedRepository repository,
-                         UseCaseExecutor executor,
-                         int batchSize) {
+    public TrainerPresenter(TrainerView view,
+                            FederatedModel model,
+                            FederatedRepository repository,
+                            UseCaseExecutor executor,
+                            int batchSize) {
         this.view = view;
         this.model = model;
         this.executor = executor;
@@ -42,14 +42,14 @@ public class IrisPresenter implements UseCaseCallback<FederatedRepository>{
     }
 
     public void startProcess() {
-        UseCase useCase = new GetIrisTrainingData(this, repository, batchSize);
+        UseCase useCase = new GetTrainingData(this, repository, batchSize);
         executor.execute(useCase);
     }
 
     @Override
     public void onSuccess(FederatedRepository result) {
         view.onDataReady(result);
-        UseCase useCase = new TrainIrisModel(model, result.getTrainingData(batchSize), new UseCaseCallback<Boolean>() {
+        UseCase useCase = new TrainModel(model, result.getTrainingData(batchSize), new UseCaseCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 if (result != null && result) {

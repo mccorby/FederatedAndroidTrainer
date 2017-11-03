@@ -21,10 +21,10 @@ import com.mccorby.federatedlearning.core.repository.FederatedRepositoryImpl;
 import com.mccorby.federatedlearning.datasource.network.ServerDataSource;
 import com.mccorby.federatedlearning.datasource.network.ServerService;
 import com.mccorby.federatedlearning.datasource.network.mapper.NetworkMapper;
-import com.mccorby.federatedlearning.features.diabetes.DiabetesFileDataSource;
+import com.mccorby.federatedlearning.features.diabetes.datasource.DiabetesFileDataSource;
 import com.mccorby.federatedlearning.features.diabetes.model.DiabetesModel;
-import com.mccorby.federatedlearning.features.iris.presentation.IrisPresenter;
-import com.mccorby.federatedlearning.features.iris.presentation.IrisView;
+import com.mccorby.federatedlearning.app.presentation.TrainerPresenter;
+import com.mccorby.federatedlearning.app.presentation.TrainerView;
 
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.optimize.api.IterationListener;
@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity implements IrisView {
+public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int BATCH_SIZE = 64;
@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         }
     };
     private DefaultUseCaseExecutor executor;
-    private IrisPresenter presenter;
+    private TrainerPresenter presenter;
     private FederatedDataSet testDataSet;
 
     @Override
@@ -125,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
     }
 
     // TODO This to injectMembers
-    private IrisPresenter createPresenter() {
+    private TrainerPresenter createPresenter() {
         // TODO Please move this somewhere else inmmediately after testing it works!
         // For diabetes
         int numInputs = 11;
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements IrisView {
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
         FederatedRepository repository = new FederatedRepositoryImpl(dataSource, networkDataSource);
-        return new IrisPresenter(this, model, repository, executor, BATCH_SIZE);
+        return new TrainerPresenter(this, model, repository, executor, BATCH_SIZE);
     }
 
     private InputStream getIrisFile() {

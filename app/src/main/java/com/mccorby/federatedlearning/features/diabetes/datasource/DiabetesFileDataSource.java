@@ -1,4 +1,4 @@
-package com.mccorby.federatedlearning.features.diabetes;
+package com.mccorby.federatedlearning.features.diabetes.datasource;
 
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
