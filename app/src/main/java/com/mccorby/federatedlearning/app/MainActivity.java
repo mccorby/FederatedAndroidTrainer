@@ -12,6 +12,8 @@ import com.mccorby.federatedlearning.BuildConfig;
 import com.mccorby.federatedlearning.R;
 import com.mccorby.federatedlearning.app.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.app.network.RetrofitServerService;
+import com.mccorby.federatedlearning.app.presentation.TrainerPresenter;
+import com.mccorby.federatedlearning.app.presentation.TrainerView;
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
@@ -21,10 +23,8 @@ import com.mccorby.federatedlearning.core.repository.FederatedRepositoryImpl;
 import com.mccorby.federatedlearning.datasource.network.ServerDataSource;
 import com.mccorby.federatedlearning.datasource.network.ServerService;
 import com.mccorby.federatedlearning.datasource.network.mapper.NetworkMapper;
-import com.mccorby.federatedlearning.features.diabetes.datasource.DiabetesFileDataSource;
-import com.mccorby.federatedlearning.features.diabetes.model.DiabetesModel;
-import com.mccorby.federatedlearning.app.presentation.TrainerPresenter;
-import com.mccorby.federatedlearning.app.presentation.TrainerView;
+import com.mccorby.federatedlearning.features.iris.datasource.IrisFileDataSource;
+import com.mccorby.federatedlearning.features.iris.model.IrisModel;
 
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.optimize.api.IterationListener;
@@ -42,14 +42,13 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int BATCH_SIZE = 64;
+    private static final int NUM_CLIENTS = 3;
 
     private TextView loggingArea;
-    private TextView predictTxt;
     private Button predictBtn;
 
     private int nModels;
     private List<FederatedModel> models;
-    private FederatedDataSource dataSource;
     private FederatedModel currentModel;
 
     private IterationListener iterationListener =  new IterationListener() {
@@ -114,8 +113,6 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
             }
         });
 
-        predictTxt = (TextView) findViewById(R.id.predict_txt);
-
         injectMembers();
     }
 
@@ -126,18 +123,20 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     // TODO This to injectMembers
     private TrainerPresenter createPresenter() {
+
         // TODO Please move this somewhere else inmmediately after testing it works!
         // For diabetes
-        int numInputs = 11;
-        int numOutputs = 1;
+//        int numInputs = 11;
+//        int numOutputs = 1;
         // For iris
-//        int numInputs = 4;
-//        int numOutputs = 3;
+        int numInputs = 4;
+        int numOutputs = 3;
 
-        FederatedModel model = new DiabetesModel("Diabetes" + nModels++, numInputs, numOutputs, iterationListener);
-//        FederatedModel model = new IrisModel("Iris" + nModels++, numInputs, numOutputs, iterationListener);
+//        FederatedModel model = new DiabetesModel("Diabetes" + nModels++, numInputs, numOutputs, iterationListener);
+        FederatedModel model = new IrisModel("Iris" + nModels++, numInputs, numOutputs, iterationListener);
 
-        dataSource = new DiabetesFileDataSource(getIrisFile(), (nModels - 1) % 3);
+//        FederatedDataSource dataSource = new DiabetesFileDataSource(getIrisFile(), (nModels - 1) % NUM_CLIENTS);
+        FederatedDataSource dataSource = new IrisFileDataSource(getIrisFile(), (nModels - 1) % NUM_CLIENTS);
         String baseUrl = BuildConfig.API_URL;
         ServerService networkClient = RetrofitServerService.getNetworkClient(baseUrl);
         NetworkMapper networkMapper = new NetworkMapper();
@@ -149,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
     private InputStream getIrisFile() {
         AssetManager am = getAssets();
         try {
-            return  am.open("diabetes.csv");
+            return  am.open("iris.csv");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -158,8 +157,6 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private void predict() {
         // Show the current model evaluation
-        predictTxt.setText(currentModel.evaluate(testDataSet));
-
         for (FederatedModel model: models) {
             String score = model.evaluate(testDataSet);
             String message = "\nScore for " + model.getId() + " => " + score;
@@ -202,11 +199,9 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     @Override
     public void onDataReady(FederatedRepository result) {
-        // TODO Probably not necessary. Check the tests
         if (testDataSet == null) {
             testDataSet = result.getTestData(BATCH_SIZE);
         }
-
     }
 
     @Override
