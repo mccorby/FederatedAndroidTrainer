@@ -36,7 +36,7 @@ public class IrisConfiguration extends ModelConfiguration {
 
         mModel = new IrisModel("Iris" + modelNumber, numInputs, numOutputs, iterationListener);
 
-        InputStream dataFile = getDataFile("diabetes.csv");
+        InputStream dataFile = getDataFile("iris.csv");
         mDataSource = new IrisFileDataSource(dataFile, (modelNumber - 1) % 3);
         return this;
     }
