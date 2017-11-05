@@ -36,6 +36,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+
 public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -126,6 +130,9 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     // TODO This to injectMembers
     private TrainerPresenter createPresenter() {
+        Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
+        Scheduler postScheduler = AndroidSchedulers.mainThread();
+
         ModelConfiguration modelConfiguration = modelConfigurationFactory
                 .getConfiguration(BuildConfig.MODEL)
                 .invoke(nModels++, iterationListener);
@@ -138,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
         FederatedRepository repository = new FederatedRepositoryImpl(dataSource, networkDataSource);
-        return new TrainerPresenter(this, model, repository, executor, BATCH_SIZE);
+        return new TrainerPresenter(this, model, repository, executor, origin, postScheduler, BATCH_SIZE);
     }
 
     private void predict() {

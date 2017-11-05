@@ -77,9 +77,7 @@ public class DiabetesFileDataSource implements FederatedDataSource {
         if (trainingData == null) {
             try {
                 createDataSource();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -91,9 +89,7 @@ public class DiabetesFileDataSource implements FederatedDataSource {
         if (testData == null) {
             try {
                 createDataSource();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
