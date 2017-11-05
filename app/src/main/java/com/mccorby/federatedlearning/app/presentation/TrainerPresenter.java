@@ -3,7 +3,6 @@ package com.mccorby.federatedlearning.app.presentation;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import com.mccorby.federatedlearning.core.domain.usecase.GetTrainingData;
-import com.mccorby.federatedlearning.core.domain.usecase.Register;
 import com.mccorby.federatedlearning.core.domain.usecase.RetrieveGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.SendGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.TrainModel;
