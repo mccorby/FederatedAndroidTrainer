@@ -40,7 +40,6 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
     private final FederatedRepository repository;
     private ModelConfiguration modelConfiguration;
     private final UseCaseExecutor executor;
-    private int batchSize;
 
     private List<FederatedModel> models;
     private FederatedDataSet testDataSet;
@@ -51,13 +50,11 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
                             UseCaseExecutor executor,
                             Scheduler originScheduler,
                             Scheduler postScheduler,
-                            int batchSize,
                             int dataSetSplits) {
         this.view = view;
         this.modelConfiguration = modelConfiguration;
         this.executor = executor;
         this.repository = repository;
-        this.batchSize = batchSize;
         this.originScheduler = originScheduler;
         this.postScheduler = postScheduler;
         this.dataSetSplits = dataSetSplits;
@@ -66,7 +63,7 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
     }
 
     public void retrieveData() {
-        UseCase useCase = new GetTrainingData(this, repository, batchSize);
+        UseCase useCase = new GetTrainingData(this, repository);
         executor.execute(useCase);
     }
 
@@ -75,7 +72,7 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         view.onDataReady(result);
         // Keeping the same test dataset for all models trained in this client
         if (testDataSet == null) {
-            testDataSet = result.getTestData(batchSize);
+            testDataSet = result.getTestData();
         }
     }
 
@@ -150,7 +147,7 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         int modelNumber = models.size() + 1;
         FederatedModel model = modelConfiguration.getNewModel(modelNumber);
 
-        FederatedDataSet trainingData = repository.getTrainingData(batchSize);
+        FederatedDataSet trainingData = repository.getTrainingData();
         int sizeDataSet = trainingData.size();
 
         int splitStep = sizeDataSet / dataSetSplits;

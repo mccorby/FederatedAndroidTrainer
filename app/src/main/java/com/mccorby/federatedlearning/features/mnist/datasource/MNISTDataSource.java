@@ -13,17 +13,17 @@ public class MNISTDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTrainingData(int batchSize) {
+    public FederatedDataSet getTrainingData() {
         return null;
     }
 
     @Override
-    public FederatedDataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData() {
         return null;
     }
 
     @Override
-    public FederatedDataSet getCrossValidationData(int batchSize) {
+    public FederatedDataSet getCrossValidationData() {
         return null;
     }
 }

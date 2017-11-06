@@ -7,7 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.mccorby.federatedlearning.BuildConfig;
+import com.google.gson.Gson;
 import com.mccorby.federatedlearning.R;
 import com.mccorby.federatedlearning.app.configuration.ModelConfiguration;
 import com.mccorby.federatedlearning.app.configuration.ModelConfigurationFactory;
@@ -26,6 +26,8 @@ import com.mccorby.federatedlearning.datasource.network.mapper.NetworkMapper;
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.optimize.api.IterationListener;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.Executors;
 
 import io.reactivex.Scheduler;
@@ -35,10 +37,6 @@ import io.reactivex.schedulers.Schedulers;
 public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-
-    // TODO Consider moving these two constants to a config file together with the values used in build.gradle
-    private static final int BATCH_SIZE = 64;
-    private static final int DATASET_SPLITS = 3;
 
     private TextView loggingArea;
     private Button predictBtn;
@@ -74,10 +72,9 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private DefaultUseCaseExecutor executor;
     private TrainerPresenter presenter;
-
-    // TODO This could be a dependency of the presenter
     private ModelConfiguration modelConfiguration;
     private Button trainBtn;
+    private TextView modelNameTxt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,8 +107,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
             }
         });
 
-        TextView modelName = (TextView) findViewById(R.id.model_txt);
-        modelName.setText(BuildConfig.MODEL);
+        modelNameTxt = (TextView) findViewById(R.id.model_txt);
 
         injectMembers();
     }
@@ -123,23 +119,30 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
     }
 
     private void injectMembers() {
+        Gson gson = new Gson();
+        FederatedParams params = gson.fromJson(loadJSONFromAsset("config.json"), FederatedParams.class);
+
+        modelNameTxt.setText(params.getModel());
+
         executor = new DefaultUseCaseExecutor(Executors.newSingleThreadExecutor());
-        ModelConfigurationFactory modelConfigurationFactory = new ModelConfigurationFactory(this, iterationListener);
+        ModelConfigurationFactory modelConfigurationFactory = new ModelConfigurationFactory(this,
+                iterationListener,
+                params.getBatchSize());
         modelConfiguration = modelConfigurationFactory
-                .getConfiguration(BuildConfig.MODEL)
+                .getConfiguration(params.getModel())
                 .invoke();
 
-        presenter = createPresenter();
+        presenter = createPresenter(params);
     }
 
     // TODO This to injectMembers
-    private TrainerPresenter createPresenter() {
+    private TrainerPresenter createPresenter(FederatedParams params) {
         Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
         Scheduler postScheduler = AndroidSchedulers.mainThread();
 
         FederatedDataSource dataSource = modelConfiguration.getDataSource();
 
-        String baseUrl = BuildConfig.API_URL;
+        String baseUrl = params.getServerUrl();
         ServerService networkClient = RetrofitServerService.getNetworkClient(baseUrl);
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
@@ -150,8 +153,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
                 executor,
                 origin,
                 postScheduler,
-                BATCH_SIZE,
-                DATASET_SPLITS);
+                params.getMaxClients());
     }
 
     private void predict() {
@@ -203,5 +205,21 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
     public void onPrediction(String message) {
         Log.d(TAG, message);
         loggingArea.append(message);
+    }
+
+    private String loadJSONFromAsset(String filename) {
+        String json;
+        try {
+            InputStream is = getAssets().open(filename);
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
     }
 }

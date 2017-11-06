@@ -32,11 +32,10 @@ public class FederatedRepositoryImplTest {
     @Test
     public void testGetTrainingData() {
         // Given
-        int batchSize = 64;
-        given(dataSource.getTrainingData(batchSize)).willReturn(dataSet);
+        given(dataSource.getTrainingData()).willReturn(dataSet);
 
         // When
-        FederatedDataSet trainingData = cut.getTrainingData(batchSize);
+        FederatedDataSet trainingData = cut.getTrainingData();
 
         // Then
         assertNotNull(trainingData);
@@ -45,11 +44,10 @@ public class FederatedRepositoryImplTest {
     @Test
     public void testGetTestData() {
         // Given
-        int batchSize = 64;
-        given(dataSource.getTestData(batchSize)).willReturn(dataSet);
+        given(dataSource.getTestData()).willReturn(dataSet);
 
         // When
-        FederatedDataSet testData = cut.getTestData(batchSize);
+        FederatedDataSet testData = cut.getTestData();
 
         // Then
         assertNotNull(testData);
@@ -58,11 +56,10 @@ public class FederatedRepositoryImplTest {
     @Test
     public void testGetCrossValidationData() {
         // Given
-        int batchSize = 64;
-        given(dataSource.getCrossValidationData(batchSize)).willReturn(dataSet);
+        given(dataSource.getCrossValidationData()).willReturn(dataSet);
 
         // When
-        FederatedDataSet crossValidationData = cut.getCrossValidationData(batchSize);
+        FederatedDataSet crossValidationData = cut.getCrossValidationData();
 
         // Then
         assertNotNull(crossValidationData);

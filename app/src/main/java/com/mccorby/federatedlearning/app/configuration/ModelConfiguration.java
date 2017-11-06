@@ -12,17 +12,20 @@ import java.io.InputStream;
 
 public abstract class ModelConfiguration {
 
-    private Context context;
     protected IterationListener iterationListener;
+    protected int batchSize;
+
+    private Context context;
 
     public abstract FederatedModel getNewModel(int modelNumber);
     public abstract FederatedDataSource getDataSource();
     public abstract ModelConfiguration invoke();
 
-    public ModelConfiguration(Context context, IterationListener iterationListener) {
+    public ModelConfiguration(Context context, IterationListener iterationListener, int batchSize) {
 
         this.context = context;
         this.iterationListener = iterationListener;
+        this.batchSize = batchSize;
     }
 
     protected final InputStream getDataFile(String filename) {

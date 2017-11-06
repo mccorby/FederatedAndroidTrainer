@@ -18,8 +18,7 @@ public class TrainerPresenterTest {
     @Test
     public void testGetTrainingDataIsPassedToTheView() {
         // Given
-        int batchSize = 64;
-        int dataSetSplits = 3;
+        int numberClients = 3;
         UseCaseExecutor executor = mock(UseCaseExecutor.class);
         FederatedRepository repository = mock(FederatedRepository.class);
         TrainerView view = mock(TrainerView.class);
@@ -34,8 +33,7 @@ public class TrainerPresenterTest {
                 executor,
                 origin,
                 post,
-                batchSize,
-                dataSetSplits);
+                numberClients);
         cut.retrieveData();
 
         // Then

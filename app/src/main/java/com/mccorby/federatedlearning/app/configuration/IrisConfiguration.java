@@ -18,8 +18,8 @@ public class IrisConfiguration extends ModelConfiguration {
 
     private FederatedDataSource dataSource;
 
-    public IrisConfiguration(Context context, IterationListener iterationListener) {
-        super(context, iterationListener);
+    public IrisConfiguration(Context context, IterationListener iterationListener, int batchSize) {
+        super(context, iterationListener, batchSize);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class IrisConfiguration extends ModelConfiguration {
     @Override
     public ModelConfiguration invoke() {
         InputStream dataFile = getDataFile("iris.csv");
-        dataSource = new IrisFileDataSource(dataFile);
+        dataSource = new IrisFileDataSource(dataFile, batchSize);
         return this;
     }
 }

@@ -14,8 +14,6 @@ android {
     }
     buildTypes {
         debug {
-            buildConfigField 'String', 'API_URL', '"http://192.168.0.33:9998/"'
-            buildConfigField 'String', 'MODEL', '"Iris"'
         }
     }
 

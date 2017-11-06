@@ -27,19 +27,18 @@ public class GetTrainingDataTest {
     @Test
     public void testGetTrainingData() {
         // Given
-        int batchSize = 64;
         FederatedDataSource dataSource = Mockito.mock(FederatedDataSource.class);
         FederatedRepository repository = Mockito.mock(FederatedRepository.class);
 
-        given(dataSource.getTrainingData(batchSize)).willReturn(dataSet);
-        given(repository.getTrainingData(batchSize)).willReturn(dataSet);
+        given(dataSource.getTrainingData()).willReturn(dataSet);
+        given(repository.getTrainingData()).willReturn(dataSet);
 
         // When
-        GetTrainingData cut = new GetTrainingData(useCaseCallback, repository, batchSize);
+        GetTrainingData cut = new GetTrainingData(useCaseCallback, repository);
         cut.execute();
 
         // Then
-        Mockito.verify(repository).getTrainingData(batchSize);
+        Mockito.verify(repository).getTrainingData();
         Mockito.verify(useCaseCallback).onSuccess(repository);
     }
 }

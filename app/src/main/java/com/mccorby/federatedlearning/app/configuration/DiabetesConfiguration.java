@@ -16,8 +16,8 @@ public class DiabetesConfiguration extends ModelConfiguration {
     private   static final int NUM_INPUTS = 11;
     private static final int NUM_OUTPUTS = 1;
 
-    public DiabetesConfiguration(Context context, IterationListener iterationListener) {
-        super(context, iterationListener);
+    public DiabetesConfiguration(Context context, IterationListener iterationListener, int batchSize) {
+        super(context, iterationListener, batchSize);
     }
 
     @Override
@@ -34,7 +34,7 @@ public class DiabetesConfiguration extends ModelConfiguration {
     public ModelConfiguration invoke() {
 
         InputStream dataFile = getDataFile("diabetes.csv");
-        mDataSource = new DiabetesFileDataSource(dataFile);
+        mDataSource = new DiabetesFileDataSource(dataFile, batchSize);
         return this;
     }
 }

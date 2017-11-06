@@ -21,11 +21,13 @@ public class DiabetesFileDataSource implements FederatedDataSource {
 
     private static final String TAG = DiabetesFileDataSource.class.getSimpleName();
     private InputStream dataFile;
+    private int batchSize;
     private DataSet trainingData;
     private DataSet testData;
 
-    public DiabetesFileDataSource(InputStream dataFile) {
+    public DiabetesFileDataSource(InputStream dataFile, int batchSize) {
         this.dataFile = dataFile;
+        this.batchSize = batchSize;
     }
 
     private void createDataSource() throws IOException, InterruptedException {
@@ -37,7 +39,6 @@ public class DiabetesFileDataSource implements FederatedDataSource {
 
         //Second: the RecordReaderDataSetIterator handles conversion to DataSet objects, ready for use in neural network
         int labelIndex = 11;
-        int batchSize = 300;
 
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, labelIndex, true);
         DataSet allData = iterator.next();
@@ -55,7 +56,7 @@ public class DiabetesFileDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTrainingData(int batchSize) {
+    public FederatedDataSet getTrainingData() {
         if (trainingData == null) {
             try {
                 createDataSource();
@@ -67,7 +68,7 @@ public class DiabetesFileDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData() {
         if (testData == null) {
             try {
                 createDataSource();
@@ -79,7 +80,7 @@ public class DiabetesFileDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getCrossValidationData(int batchSize) {
+    public FederatedDataSet getCrossValidationData() {
         return null;
     }
 }

@@ -1,7 +1,5 @@
 package com.mccorby.federatedlearning.features.iris.datasource;
 
-import android.util.Log;
-
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
 import com.mccorby.federatedlearning.datasource.FederatedDataSetImpl;
@@ -23,11 +21,13 @@ public class IrisFileDataSource implements FederatedDataSource {
 
     private static final String TAG = IrisFileDataSource.class.getSimpleName();
     private InputStream dataFile;
+    private int batchSize;
     private DataSet trainingData;
     private DataSet testData;
 
-    public IrisFileDataSource(InputStream dataFile) {
+    public IrisFileDataSource(InputStream dataFile, int batchSize) {
         this.dataFile = dataFile;
+        this.batchSize = batchSize;
     }
 
     private void createDataSource() throws IOException, InterruptedException {
@@ -40,7 +40,6 @@ public class IrisFileDataSource implements FederatedDataSource {
         //Second: the RecordReaderDataSetIterator handles conversion to DataSet objects, ready for use in neural network
         int labelIndex = 4;     //5 values in each row of the iris.txt CSV: 4 input features followed by an integer label (class) index. Labels are the 5th value (index 4) in each row
         int numClasses = 3;     //3 classes (types of iris flowers) in the iris data set. Classes have integer values 0, 1 or 2
-        int batchSize = 150;
 
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numClasses);
         DataSet allData = iterator.next();
@@ -59,7 +58,7 @@ public class IrisFileDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTrainingData(int batchSize) {
+    public FederatedDataSet getTrainingData() {
         if (trainingData == null) {
             try {
                 createDataSource();
@@ -71,7 +70,7 @@ public class IrisFileDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData() {
         if (testData == null) {
             try {
                 createDataSource();
@@ -83,7 +82,7 @@ public class IrisFileDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getCrossValidationData(int batchSize) {
+    public FederatedDataSet getCrossValidationData() {
         return null;
     }
 }

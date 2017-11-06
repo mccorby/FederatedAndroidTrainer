@@ -18,18 +18,18 @@ public class FederatedRepositoryImpl implements FederatedRepository {
     }
 
     @Override
-    public FederatedDataSet getTrainingData(int batchSize) {
-        return dataSource.getTrainingData(batchSize);
+    public FederatedDataSet getTrainingData() {
+        return dataSource.getTrainingData();
     }
 
     @Override
-    public FederatedDataSet getTestData(int batchSize) {
-        return dataSource.getTestData(batchSize);
+    public FederatedDataSet getTestData() {
+        return dataSource.getTestData();
     }
 
     @Override
-    public FederatedDataSet getCrossValidationData(int batchSize) {
-        return dataSource.getCrossValidationData(batchSize);
+    public FederatedDataSet getCrossValidationData() {
+        return dataSource.getCrossValidationData();
     }
 
     @Override

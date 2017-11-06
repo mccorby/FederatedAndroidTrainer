@@ -28,7 +28,7 @@ public class SumDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTrainingData(int batchSize) {
+    public FederatedDataSet getTrainingData() {
         Random rand = new Random(seed);
         double[] sum = new double[N_SAMPLES];
         double[] input1 = new double[N_SAMPLES];
@@ -48,7 +48,7 @@ public class SumDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getTestData(int batchSize) {
+    public FederatedDataSet getTestData() {
         Random rand = new Random(seed);
         int numSamples = N_SAMPLES/10;
         double[] sum = new double[numSamples];
@@ -67,7 +67,7 @@ public class SumDataSource implements FederatedDataSource {
     }
 
     @Override
-    public FederatedDataSet getCrossValidationData(int batchSize) {
+    public FederatedDataSet getCrossValidationData() {
         return null;
     }
 }
