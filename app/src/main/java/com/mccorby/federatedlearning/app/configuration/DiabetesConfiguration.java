@@ -12,16 +12,17 @@ import org.deeplearning4j.optimize.api.IterationListener;
 import java.io.InputStream;
 
 public class DiabetesConfiguration extends ModelConfiguration {
-    private FederatedModel mModel;
     private FederatedDataSource mDataSource;
+    private   static final int NUM_INPUTS = 11;
+    private static final int NUM_OUTPUTS = 1;
 
-    public DiabetesConfiguration(Context context) {
-        super(context);
+    public DiabetesConfiguration(Context context, IterationListener iterationListener) {
+        super(context, iterationListener);
     }
 
     @Override
-    public FederatedModel getModel() {
-        return mModel;
+    public FederatedModel getNewModel(int modelNumber) {
+        return new DiabetesModel("Diabetes" + modelNumber, NUM_INPUTS, NUM_OUTPUTS, iterationListener);
     }
 
     @Override
@@ -30,14 +31,10 @@ public class DiabetesConfiguration extends ModelConfiguration {
     }
 
     @Override
-    public ModelConfiguration invoke(int modelNumber, IterationListener iterationListener) {
-        int numInputs = 11;
-        int numOutputs = 1;
-
-        mModel = new DiabetesModel("Diabetes" + modelNumber, numInputs, numOutputs, iterationListener);
+    public ModelConfiguration invoke() {
 
         InputStream dataFile = getDataFile("diabetes.csv");
-        mDataSource = new DiabetesFileDataSource(dataFile, (modelNumber - 1) % 3);
+        mDataSource = new DiabetesFileDataSource(dataFile);
         return this;
     }
 }

@@ -1,5 +1,7 @@
 package com.mccorby.federatedlearning.app.presentation;
 
+import com.mccorby.federatedlearning.app.configuration.ModelConfiguration;
+import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import com.mccorby.federatedlearning.core.domain.usecase.GetTrainingData;
@@ -10,6 +12,14 @@ import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
+
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.Scheduler;
 import io.reactivex.annotations.NonNull;
@@ -22,29 +32,33 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
     private final TrainerView view;
     private final Scheduler postScheduler;
     private final Scheduler originScheduler;
-    private FederatedModel model;
     private final FederatedRepository repository;
+    private ModelConfiguration modelConfiguration;
     private final UseCaseExecutor executor;
     private int batchSize;
 
+    private List<FederatedModel> models;
+    private FederatedDataSet testDataSet;
+
     public TrainerPresenter(TrainerView view,
-                            FederatedModel model,
+                            ModelConfiguration modelConfiguration,
                             FederatedRepository repository,
                             UseCaseExecutor executor,
                             Scheduler originScheduler,
                             Scheduler postScheduler,
                             int batchSize) {
         this.view = view;
-        this.model = model;
+        this.modelConfiguration = modelConfiguration;
         this.executor = executor;
         this.repository = repository;
         this.batchSize = batchSize;
         this.originScheduler = originScheduler;
         this.postScheduler = postScheduler;
 
+        models = new ArrayList<>();
     }
 
-    public void startProcess() {
+    public void retrieveData() {
         UseCase useCase = new GetTrainingData(this, repository, batchSize);
         executor.execute(useCase);
     }
@@ -52,20 +66,10 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
     @Override
     public void onSuccess(FederatedRepository result) {
         view.onDataReady(result);
-        UseCase useCase = new TrainModel(model, result.getTrainingData(batchSize), new UseCaseCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                if (result != null && result) {
-                    view.onTrainingDone(model);
-                }
-            }
-
-            @Override
-            public void onError(UseCaseError error) {
-                view.onError("Error training");
-            }
-        });
-        executor.execute(useCase);
+        // Keeping the same test dataset for all models trained in this client
+        if (testDataSet == null) {
+            testDataSet = result.getTestData(batchSize);
+        }
     }
 
     @Override
@@ -73,12 +77,18 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         view.onError("Error retrieving data");
     }
 
-    public void setModel(FederatedModel model) {
-        this.model = model;
-    }
-
     // TODO This method does not correspond to this object
-    public void sendGradient(byte[] gradient) {
+    public void sendGradient() {
+        // TODO Having a Nd4j in this presenter does not look good.
+        FederatedModel currentModel = models.get(models.size() - 1);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            Nd4j.write(outputStream, currentModel.getGradient());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        byte[] gradient = outputStream.toByteArray();
         SendGradient sendGradient = new SendGradient(repository, gradient, originScheduler, postScheduler);
         sendGradient.execute(new DisposableObserver<Boolean>() {
             @Override
@@ -103,8 +113,18 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         RetrieveGradient retrieveGradient = new RetrieveGradient(repository, originScheduler, postScheduler);
         retrieveGradient.execute(new DisposableObserver<byte[]>() {
             @Override
-            public void onNext(@NonNull byte[] bytes) {
-                view.onGradientReceived(bytes);
+            public void onNext(@NonNull byte[] gradient) {
+                try {
+                    INDArray remoteGradient = Nd4j.fromByteArray(gradient);
+                    for (FederatedModel model: models) {
+                        model.updateWeights(remoteGradient);
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                view.onGradientReceived(gradient);
             }
 
             @Override
@@ -117,5 +137,35 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
             }
         });
+    }
+
+    public void train() {
+        FederatedModel model = modelConfiguration.getNewModel(models.size() + 1);
+        models.add(model);
+        UseCase useCase = new TrainModel(model, repository.getTrainingData(batchSize), new UseCaseCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                if (result != null && result) {
+                    sendGradient();
+                    view.onTrainingDone();
+                }
+            }
+
+            @Override
+            public void onError(UseCaseError error) {
+                view.onError("Error training");
+            }
+        });
+        executor.execute(useCase);
+    }
+
+    public void predict() {
+        // Show the current model evaluation
+        for (FederatedModel model: models) {
+            String score = model.evaluate(testDataSet);
+
+            String message = "\nScore for " + model.getId() + " => " + score + "\n";
+            view.onPrediction(message);
+        }
     }
 }

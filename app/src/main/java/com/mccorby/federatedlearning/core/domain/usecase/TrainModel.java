@@ -19,8 +19,12 @@ public class TrainModel implements UseCase {
 
     @Override
     public void execute() {
-        model.buildModel();
-        model.train(dataSource);
-        callback.onSuccess(Boolean.TRUE);
+        if (model == null) {
+            callback.onError(new UseCaseError());
+        } else {
+            model.buildModel();
+            model.train(dataSource);
+            callback.onSuccess(Boolean.TRUE);
+        }
     }
 }

@@ -20,15 +20,12 @@ import java.io.InputStream;
 public class DiabetesFileDataSource implements FederatedDataSource {
 
     private static final String TAG = DiabetesFileDataSource.class.getSimpleName();
-    private InputStream mDataFile;
-    private int mDistributedOrder;
+    private InputStream dataFile;
     private DataSet trainingData;
     private DataSet testData;
-    private int batchSize;
 
-    public DiabetesFileDataSource(InputStream dataFile, int distributedOrder) {
-        mDataFile = dataFile;
-        mDistributedOrder = distributedOrder;
+    public DiabetesFileDataSource(InputStream dataFile) {
+        this.dataFile = dataFile;
     }
 
     private void createDataSource() throws IOException, InterruptedException {
@@ -36,31 +33,16 @@ public class DiabetesFileDataSource implements FederatedDataSource {
         int numLinesToSkip = 0;
         String delimiter = ",";
         RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
-        recordReader.initialize(new InputStreamInputSplit(mDataFile));
+        recordReader.initialize(new InputStreamInputSplit(dataFile));
 
         //Second: the RecordReaderDataSetIterator handles conversion to DataSet objects, ready for use in neural network
         int labelIndex = 11;
-        batchSize = 300;
+        int batchSize = 300;
 
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, labelIndex, true);
         DataSet allData = iterator.next();
-        org.nd4j.linalg.dataset.api.DataSet result;
-        switch (mDistributedOrder) {
-            case 0:
-                result = allData.getRange(0, 100);
-                break;
-            case 1:
-                result = allData.getRange(101, 200);
-                break;
-            case 2:
-                result = allData.getRange(201, 300);
-                break;
-            default:
-                result = allData;
-                break;
-        }
 
-        SplitTestAndTrain testAndTrain = result.splitTestAndTrain(0.80);  //Use 80% of data for training
+        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.80);  //Use 80% of data for training
 
         trainingData = testAndTrain.getTrain();
         testData = testAndTrain.getTest();

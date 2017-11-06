@@ -13,14 +13,16 @@ import java.io.InputStream;
 public abstract class ModelConfiguration {
 
     private Context context;
+    protected IterationListener iterationListener;
 
-    public abstract FederatedModel getModel();
+    public abstract FederatedModel getNewModel(int modelNumber);
     public abstract FederatedDataSource getDataSource();
-    public abstract ModelConfiguration invoke(int modelNumber, IterationListener iterationListener);
+    public abstract ModelConfiguration invoke();
 
-    public ModelConfiguration(Context context) {
+    public ModelConfiguration(Context context, IterationListener iterationListener) {
 
         this.context = context;
+        this.iterationListener = iterationListener;
     }
 
     protected final InputStream getDataFile(String filename) {

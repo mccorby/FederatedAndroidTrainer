@@ -1,16 +1,15 @@
 package com.mccorby.federatedlearning.app.presentation;
 
-import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
-import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
 import com.mccorby.federatedlearning.core.domain.usecase.GetTrainingData;
+import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
 
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import io.reactivex.Scheduler;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
 public class TrainerPresenterTest {
@@ -22,16 +21,14 @@ public class TrainerPresenterTest {
         UseCaseExecutor executor = mock(UseCaseExecutor.class);
         FederatedRepository repository = mock(FederatedRepository.class);
         TrainerView view = mock(TrainerView.class);
-        FederatedModel model = mock(FederatedModel.class);
         Scheduler origin = mock(Scheduler.class);
         Scheduler post = mock(Scheduler.class);
 
         // When
-        TrainerPresenter cut = new TrainerPresenter(view, model, repository, executor, origin, post, batchSize);
-        cut.startProcess();
+        TrainerPresenter cut = new TrainerPresenter(view, modelConfiguration, repository, executor, origin, post, batchSize);
+        cut.retrieveData();
 
         // Then
-        Mockito.verify(executor).execute(ArgumentMatchers.any(GetTrainingData.class));
+        Mockito.verify(executor).execute(any(GetTrainingData.class));
     }
-
 }

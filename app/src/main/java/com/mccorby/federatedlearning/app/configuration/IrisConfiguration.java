@@ -12,16 +12,20 @@ import org.deeplearning4j.optimize.api.IterationListener;
 import java.io.InputStream;
 
 public class IrisConfiguration extends ModelConfiguration {
-    private FederatedModel model;
+
+    private static final int NUM_INPUTS = 4;
+    private static final int NUM_OUTPUTS = 3;
+
     private FederatedDataSource dataSource;
 
-    public IrisConfiguration(Context context) {
-        super(context);
+    public IrisConfiguration(Context context, IterationListener iterationListener) {
+        super(context, iterationListener);
     }
 
     @Override
-    public FederatedModel getModel() {
-        return model;
+    public FederatedModel getNewModel(int modelNumber) {
+
+        return new IrisModel("Iris" + modelNumber, NUM_INPUTS, NUM_OUTPUTS, iterationListener);
     }
 
     @Override
@@ -30,14 +34,9 @@ public class IrisConfiguration extends ModelConfiguration {
     }
 
     @Override
-    public ModelConfiguration invoke(int modelNumber, IterationListener iterationListener) {
-        int numInputs = 4;
-        int numOutputs = 3;
-
-        model = new IrisModel("Iris" + modelNumber, numInputs, numOutputs, iterationListener);
-
+    public ModelConfiguration invoke() {
         InputStream dataFile = getDataFile("iris.csv");
-        dataSource = new IrisFileDataSource(dataFile, (modelNumber - 1) % 3);
+        dataSource = new IrisFileDataSource(dataFile);
         return this;
     }
 }

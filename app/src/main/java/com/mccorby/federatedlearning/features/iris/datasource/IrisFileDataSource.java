@@ -20,14 +20,12 @@ import java.io.InputStream;
 public class IrisFileDataSource implements FederatedDataSource {
 
     private static final String TAG = IrisFileDataSource.class.getSimpleName();
-    private InputStream mDataFile;
-    private int mDistributedOrder;
+    private InputStream dataFile;
     private DataSet trainingData;
     private DataSet testData;
 
-    public IrisFileDataSource(InputStream dataFile, int distributedOrder) {
-        mDataFile = dataFile;
-        mDistributedOrder = distributedOrder;
+    public IrisFileDataSource(InputStream dataFile) {
+        this.dataFile = dataFile;
     }
 
     private void createDataSource() throws IOException, InterruptedException {
@@ -35,7 +33,7 @@ public class IrisFileDataSource implements FederatedDataSource {
         int numLinesToSkip = 0;
         String delimiter = ",";
         RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
-        recordReader.initialize(new InputStreamInputSplit(mDataFile));
+        recordReader.initialize(new InputStreamInputSplit(dataFile));
 
         //Second: the RecordReaderDataSetIterator handles conversion to DataSet objects, ready for use in neural network
         int labelIndex = 4;     //5 values in each row of the iris.txt CSV: 4 input features followed by an integer label (class) index. Labels are the 5th value (index 4) in each row
@@ -46,25 +44,8 @@ public class IrisFileDataSource implements FederatedDataSource {
         DataSet allData = iterator.next();
 
         allData.shuffle();
-        org.nd4j.linalg.dataset.api.DataSet result;
-        switch (mDistributedOrder) {
-            case 0:
-                result = allData.getRange(0, 49);
-                break;
-            case 1:
-                result = allData.getRange(50, 99);
-                break;
-            case 2:
-                result = allData.getRange(100, 149);
-                break;
-            default:
-                result = allData;
-                break;
-        }
 
-//        result = allData.filterBy(new int[]{mDistributedOrder});
-
-        SplitTestAndTrain testAndTrain = result.splitTestAndTrain(0.80);  //Use 80% of data for training
+        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.80);  //Use 80% of data for training
 
         trainingData = testAndTrain.getTrain();
         testData = testAndTrain.getTest();

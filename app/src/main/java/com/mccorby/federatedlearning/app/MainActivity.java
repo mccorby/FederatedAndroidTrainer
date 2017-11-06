@@ -15,8 +15,6 @@ import com.mccorby.federatedlearning.app.executor.DefaultUseCaseExecutor;
 import com.mccorby.federatedlearning.app.network.RetrofitServerService;
 import com.mccorby.federatedlearning.app.presentation.TrainerPresenter;
 import com.mccorby.federatedlearning.app.presentation.TrainerView;
-import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
-import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import com.mccorby.federatedlearning.core.repository.FederatedDataSource;
 import com.mccorby.federatedlearning.core.repository.FederatedNetworkDataSource;
@@ -27,13 +25,7 @@ import com.mccorby.federatedlearning.datasource.network.mapper.NetworkMapper;
 
 import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.optimize.api.IterationListener;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executors;
 
 import io.reactivex.Scheduler;
@@ -48,11 +40,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
     private TextView loggingArea;
     private Button predictBtn;
 
-    private int nModels;
-    private List<FederatedModel> models;
-    private FederatedModel currentModel;
-
-    private IterationListener iterationListener =  new IterationListener() {
+    private IterationListener iterationListener = new IterationListener() {
 
         @Override
         public boolean invoked() {
@@ -80,10 +68,14 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
             });
         }
     };
+
     private DefaultUseCaseExecutor executor;
     private TrainerPresenter presenter;
-    private FederatedDataSet testDataSet;
     private ModelConfigurationFactory modelConfigurationFactory;
+
+    // TODO This could be a dependency of the presenter
+    private ModelConfiguration modelConfiguration;
+    private Button trainBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +83,8 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
         setContentView(R.layout.activity_main);
 
         loggingArea = (TextView) findViewById(R.id.logging_area);
-        final Button trainBtn = (Button) findViewById(R.id.train_btn);
+        trainBtn = (Button) findViewById(R.id.train_btn);
+        trainBtn.setEnabled(false);
         trainBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -121,11 +114,20 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
         injectMembers();
     }
 
-    private void injectMembers() {
-        models = new ArrayList<>();
-        executor = new DefaultUseCaseExecutor(Executors.newSingleThreadExecutor());
-        modelConfigurationFactory = new ModelConfigurationFactory(this);
+    @Override
+    public void onStart() {
+        super.onStart();
+        presenter.retrieveData();
+    }
 
+    private void injectMembers() {
+        executor = new DefaultUseCaseExecutor(Executors.newSingleThreadExecutor());
+        modelConfigurationFactory = new ModelConfigurationFactory(this, iterationListener);
+        modelConfiguration = modelConfigurationFactory
+                .getConfiguration(BuildConfig.MODEL)
+                .invoke();
+
+        presenter = createPresenter();
     }
 
     // TODO This to injectMembers
@@ -133,51 +135,27 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
         Scheduler origin = Schedulers.from(Executors.newSingleThreadExecutor());
         Scheduler postScheduler = AndroidSchedulers.mainThread();
 
-        ModelConfiguration modelConfiguration = modelConfigurationFactory
-                .getConfiguration(BuildConfig.MODEL)
-                .invoke(nModels++, iterationListener);
-
         FederatedDataSource dataSource = modelConfiguration.getDataSource();
-        FederatedModel model = modelConfiguration.getModel();
 
         String baseUrl = BuildConfig.API_URL;
         ServerService networkClient = RetrofitServerService.getNetworkClient(baseUrl);
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
         FederatedRepository repository = new FederatedRepositoryImpl(dataSource, networkDataSource);
-        return new TrainerPresenter(this, model, repository, executor, origin, postScheduler, BATCH_SIZE);
+        return new TrainerPresenter(this, modelConfiguration, repository, executor, origin, postScheduler, BATCH_SIZE);
     }
 
     private void predict() {
-        // Show the current model evaluation
-        for (FederatedModel model: models) {
-            String score = model.evaluate(testDataSet);
-            String message = "\nScore for " + model.getId() + " => " + score + "\n";
-            Log.d(TAG, message);
-            loggingArea.append(message);
-        }
+        presenter.predict();
     }
 
     private void train() {
         predictBtn.setEnabled(false);
-        presenter = createPresenter();
-        presenter.startProcess();
-    }
-
-    private void sendGradientToServer() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try {
-            Nd4j.write(outputStream, currentModel.getGradient());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        presenter.sendGradient(outputStream.toByteArray());
+        presenter.train();
     }
 
     @Override
-    public void onTrainingDone(FederatedModel model) {
-        currentModel = model;
-        models.add(model);
+    public void onTrainingDone() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -185,25 +163,21 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
                 predict();
             }
         });
-
-        // TODO This should be done by someone else, not by the view. (Use case with RxJava)
-        sendGradientToServer();
     }
 
     @Override
     public void onDataReady(FederatedRepository result) {
-        // Keep the first test dataset.
-        // TODO The dataset should be split before doing anything with the models
-        // TODO Then the models would have the subset of the training dataset
-        // This way it is not necessary to read the dataset every time
-        if (testDataSet == null) {
-            testDataSet = result.getTestData(BATCH_SIZE);
-        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                trainBtn.setEnabled(true);
+            }
+        });
     }
 
     @Override
     public void onError(String errorMessage) {
-
+        loggingArea.append("Something went wrong: " + errorMessage);
     }
 
     @Override
@@ -214,14 +188,11 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
     @Override
     public void onGradientReceived(byte[] gradient) {
         loggingArea.append("\n\nGradient received from server " + (gradient != null ? gradient.length : "null") + "\n");
-        try {
-            INDArray remoteGradient = Nd4j.fromByteArray(gradient);
-            for (FederatedModel model: models) {
-                model.updateWeights(remoteGradient);
-            }
+    }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    @Override
+    public void onPrediction(String message) {
+        Log.d(TAG, message);
+        loggingArea.append(message);
     }
 }

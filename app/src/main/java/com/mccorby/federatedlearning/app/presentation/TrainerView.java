@@ -1,11 +1,10 @@
 package com.mccorby.federatedlearning.app.presentation;
 
-import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 
 public interface TrainerView {
 
-    void onTrainingDone(FederatedModel model);
+    void onTrainingDone();
 
     void onDataReady(FederatedRepository result);
 
@@ -14,4 +13,6 @@ public interface TrainerView {
     void onGradientSent(Boolean aBoolean);
 
     void onGradientReceived(byte[] gradient);
+
+    void onPrediction(String message);
 }
