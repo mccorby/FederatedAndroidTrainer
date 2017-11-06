@@ -1,5 +1,7 @@
 package com.mccorby.federatedlearning.app.presentation;
 
+import android.util.Log;
+
 import com.mccorby.federatedlearning.app.configuration.ModelConfiguration;
 import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
@@ -25,12 +27,15 @@ import io.reactivex.Scheduler;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.observers.DisposableObserver;
 
+import static android.content.ContentValues.TAG;
+
 // TODO Reaching callback hell very soon. Think moving to RxJava
 // TODO Should FederatedModel be passed as a dependency or not?
 public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
     private final TrainerView view;
     private final Scheduler postScheduler;
+    private int dataSetSplits;
     private final Scheduler originScheduler;
     private final FederatedRepository repository;
     private ModelConfiguration modelConfiguration;
@@ -46,7 +51,8 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
                             UseCaseExecutor executor,
                             Scheduler originScheduler,
                             Scheduler postScheduler,
-                            int batchSize) {
+                            int batchSize,
+                            int dataSetSplits) {
         this.view = view;
         this.modelConfiguration = modelConfiguration;
         this.executor = executor;
@@ -54,6 +60,7 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         this.batchSize = batchSize;
         this.originScheduler = originScheduler;
         this.postScheduler = postScheduler;
+        this.dataSetSplits = dataSetSplits;
 
         models = new ArrayList<>();
     }
@@ -140,9 +147,20 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
     }
 
     public void train() {
-        FederatedModel model = modelConfiguration.getNewModel(models.size() + 1);
+        int modelNumber = models.size() + 1;
+        FederatedModel model = modelConfiguration.getNewModel(modelNumber);
+
+        FederatedDataSet trainingData = repository.getTrainingData(batchSize);
+        int sizeDataSet = trainingData.size();
+
+        int splitStep = sizeDataSet / dataSetSplits;
+        int from = splitStep * ((modelNumber - 1) % dataSetSplits);
+        int to = Math.min(from + splitStep, sizeDataSet);
+        Log.d(TAG, "Getting subset from " + from  + " to " + to);
+
+        FederatedDataSet dataSet = trainingData.getSubSet(from, to);
         models.add(model);
-        UseCase useCase = new TrainModel(model, repository.getTrainingData(batchSize), new UseCaseCallback<Boolean>() {
+        UseCase useCase = new TrainModel(model, dataSet, new UseCaseCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 if (result != null && result) {

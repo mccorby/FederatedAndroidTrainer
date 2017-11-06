@@ -35,7 +35,10 @@ import io.reactivex.schedulers.Schedulers;
 public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    // TODO Consider moving these two constants to a config file together with the values used in build.gradle
     private static final int BATCH_SIZE = 64;
+    private static final int DATASET_SPLITS = 3;
 
     private TextView loggingArea;
     private Button predictBtn;
@@ -71,7 +74,6 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private DefaultUseCaseExecutor executor;
     private TrainerPresenter presenter;
-    private ModelConfigurationFactory modelConfigurationFactory;
 
     // TODO This could be a dependency of the presenter
     private ModelConfiguration modelConfiguration;
@@ -122,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private void injectMembers() {
         executor = new DefaultUseCaseExecutor(Executors.newSingleThreadExecutor());
-        modelConfigurationFactory = new ModelConfigurationFactory(this, iterationListener);
+        ModelConfigurationFactory modelConfigurationFactory = new ModelConfigurationFactory(this, iterationListener);
         modelConfiguration = modelConfigurationFactory
                 .getConfiguration(BuildConfig.MODEL)
                 .invoke();
@@ -142,7 +144,14 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
         NetworkMapper networkMapper = new NetworkMapper();
         FederatedNetworkDataSource networkDataSource = new ServerDataSource(networkClient, networkMapper);
         FederatedRepository repository = new FederatedRepositoryImpl(dataSource, networkDataSource);
-        return new TrainerPresenter(this, modelConfiguration, repository, executor, origin, postScheduler, BATCH_SIZE);
+        return new TrainerPresenter(this,
+                modelConfiguration,
+                repository,
+                executor,
+                origin,
+                postScheduler,
+                BATCH_SIZE,
+                DATASET_SPLITS);
     }
 
     private void predict() {
