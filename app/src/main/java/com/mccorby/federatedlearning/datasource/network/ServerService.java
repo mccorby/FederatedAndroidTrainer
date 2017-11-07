@@ -14,4 +14,7 @@ public interface ServerService {
 
     @GET("/service/federatedservice/gradient")
     Observable<ResponseBody> getGradient();
+
+    @GET("/service/federatedservice/register")
+    Observable<Integer> register();
 }

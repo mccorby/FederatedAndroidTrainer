@@ -12,4 +12,6 @@ public interface FederatedRepository {
 
     Observable<Boolean> uploadGradient(byte[] gradient);
     Observable<byte[]> retrieveGradient();
+
+    Observable<Integer> registerModel();
 }

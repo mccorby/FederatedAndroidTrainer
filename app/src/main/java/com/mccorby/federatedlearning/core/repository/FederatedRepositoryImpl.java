@@ -40,6 +40,10 @@ public class FederatedRepositoryImpl implements FederatedRepository {
     @Override
     public Observable<byte[]> retrieveGradient() {
         return networkDataSource.retrieveGradient();
+    }
 
+    @Override
+    public Observable<Integer> registerModel() {
+        return networkDataSource.registerModel();
     }
 }

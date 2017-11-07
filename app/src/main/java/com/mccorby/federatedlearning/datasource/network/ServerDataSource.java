@@ -40,4 +40,9 @@ public class ServerDataSource implements FederatedNetworkDataSource {
             }
         });
     }
+
+    @Override
+    public Observable<Integer> registerModel() {
+        return networkService.register();
+    }
 }

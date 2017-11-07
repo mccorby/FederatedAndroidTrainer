@@ -8,4 +8,6 @@ public interface FederatedNetworkDataSource {
     Observable<Boolean> sendGradient(byte[] gradient);
 
     Observable<byte[]> retrieveGradient();
+
+    Observable<Integer> registerModel();
 }

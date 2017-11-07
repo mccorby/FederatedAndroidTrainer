@@ -7,6 +7,7 @@ import com.mccorby.federatedlearning.core.domain.model.FederatedDataSet;
 import com.mccorby.federatedlearning.core.domain.model.FederatedModel;
 import com.mccorby.federatedlearning.core.domain.repository.FederatedRepository;
 import com.mccorby.federatedlearning.core.domain.usecase.GetTrainingData;
+import com.mccorby.federatedlearning.core.domain.usecase.Register;
 import com.mccorby.federatedlearning.core.domain.usecase.RetrieveGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.SendGradient;
 import com.mccorby.federatedlearning.core.domain.usecase.TrainModel;
@@ -83,7 +84,7 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
     // TODO This method does not correspond to this object
     public void sendGradient() {
-        // TODO Having a Nd4j in this presenter does not look good.
+        // TODO A mapper should do the work of translating Nd4j objects into the domain
         FederatedModel currentModel = models.get(models.size() - 1);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
@@ -143,8 +144,28 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         });
     }
 
-    public void train() {
-        int modelNumber = models.size() + 1;
+    public void trainNewModel() {
+        Register register = new Register(repository, originScheduler, postScheduler);
+        register.execute(new DisposableObserver<Integer>() {
+            @Override
+            public void onNext(@NonNull Integer modelNumber) {
+                train(modelNumber);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+    }
+
+    private void train(Integer modelNumber) {
         FederatedModel model = modelConfiguration.getNewModel(modelNumber);
 
         FederatedDataSet trainingData = repository.getTrainingData();

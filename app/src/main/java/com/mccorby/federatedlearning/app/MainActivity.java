@@ -162,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
 
     private void train() {
         predictBtn.setEnabled(false);
-        presenter.train();
+        presenter.trainNewModel();
     }
 
     @Override
