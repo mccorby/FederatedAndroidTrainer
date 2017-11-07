@@ -207,6 +207,11 @@ public class MainActivity extends AppCompatActivity implements TrainerView {
         loggingArea.append(message);
     }
 
+    @Override
+    public void onTrainingStart(int modelNumber, int size) {
+        loggingArea.append("\nStarting training of model " + modelNumber + " with " + size + " samples");
+    }
+
     private String loadJSONFromAsset(String filename) {
         String json;
         try {

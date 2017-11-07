@@ -154,29 +154,20 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
             @Override
             public void onError(@NonNull Throwable e) {
-
+                train(-1);
             }
 
             @Override
             public void onComplete() {
-
             }
         });
 
     }
 
-    private void train(Integer modelNumber) {
+    private void train(int modelNumber) {
         FederatedModel model = modelConfiguration.getNewModel(modelNumber);
 
-        FederatedDataSet trainingData = repository.getTrainingData();
-        int sizeDataSet = trainingData.size();
-
-        int splitStep = sizeDataSet / dataSetSplits;
-        int from = splitStep * ((modelNumber - 1) % dataSetSplits);
-        int to = Math.min(from + splitStep, sizeDataSet);
-        Log.d(TAG, "Getting subset from " + from  + " to " + to);
-
-        FederatedDataSet dataSet = trainingData.getSubSet(from, to);
+        FederatedDataSet dataSet = getTrainingSubDataSet(modelNumber, repository.getTrainingData());
         models.add(model);
         UseCase useCase = new TrainModel(model, dataSet, new UseCaseCallback<Boolean>() {
             @Override
@@ -192,7 +183,25 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
                 view.onError("Error training");
             }
         });
+        view.onTrainingStart(modelNumber, dataSet.size());
         executor.execute(useCase);
+    }
+
+    private FederatedDataSet getTrainingSubDataSet(Integer modelNumber, FederatedDataSet trainingData) {
+        FederatedDataSet dataSet;
+        if (modelNumber >= 0) {
+            int sizeDataSet = trainingData.size();
+
+            int splitStep = sizeDataSet / dataSetSplits;
+            int from = splitStep * ((modelNumber - 1) % dataSetSplits);
+            int to = Math.min(from + splitStep, sizeDataSet);
+            Log.d(TAG, "Getting subset from " + from + " to " + to);
+
+            dataSet = trainingData.getSubSet(from, to);
+        } else {
+            dataSet = trainingData;
+        }
+        return dataSet;
     }
 
     public void predict() {

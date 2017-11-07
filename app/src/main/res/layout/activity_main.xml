@@ -20,19 +20,19 @@
             android:id="@+id/train_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Train"/>
+            android:text="@string/train"/>
 
         <Button
             android:id="@+id/predict_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Predict"/>
+            android:text="@string/evaluate"/>
 
         <Button
             android:id="@+id/update_models_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Update Models"/>
+            android:text="@string/update_models"/>
     </LinearLayout>
 
     <LinearLayout
@@ -45,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="20sp"
-            android:text="Model in use:"/>
+            android:text="@string/model_in_use"/>
         <TextView
             android:id="@+id/model_txt"
             android:layout_width="wrap_content"
@@ -53,7 +53,7 @@
             android:layout_marginLeft="20dp"
             android:textColor="@android:color/holo_green_light"
             android:textSize="20sp"
-            tools:text="0.44"/>
+            tools:text="Iris"/>
     </LinearLayout>
 
 

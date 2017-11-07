@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Trainer-DL4J</string>
+    <string name="model_in_use">Model in use:</string>
+    <string name="update_models">Update Models</string>
+    <string name="evaluate">Evaluate</string>
+    <string name="train">Train</string>
 </resources>

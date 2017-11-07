@@ -15,4 +15,6 @@ public interface TrainerView {
     void onGradientReceived(byte[] gradient);
 
     void onPrediction(String message);
+
+    void onTrainingStart(int modelNumber, int size);
 }
