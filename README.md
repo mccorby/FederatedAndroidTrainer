@@ -1,16 +1,18 @@
-Federated Learning with Android clients
+# Federated Learning with Android clients
 
-A naive approach
+## A naive approach
 
 # Introduction
 
-Ever since Google released the paper and the corresponding blog entry talking about how they used federated learning to delegate part of the training into mobile devices, I wanted to do something similar. Being a parent, a full-time worker and a self-student of machine learning did not leave me much time to focus on this particular project
+Ever since Google released the [paper](https://arxiv.org/pdf/1602.05629.pdf) and the corresponding [blog entry](https://research.googleblog.com/2017/04/federated-learning-collaborative.html) talking about how they used federated learning to delegate part of the training into mobile devices, I wanted to do something similar. Being a parent, a full-time worker and a self-student of machine learning did not leave me much time to focus on this particular project
 
 In my opinion, Federated Learning is one of the most interesting developments in Machine Learning in 2017. It brings training to the clients which means distributing the effort among millions of devices while adding a level of security and privacy to the data that it is one of the biggest concerns in certain fields as health care
 
-This project is a mere proof of concept and as such should be treated. It focuses on the moving pieces that a federated learning system contemplates rather than in model design, server strategies or even Android best practices. The important bit of security is also to be done. I do think there are enough attractive ideas in it to continue the development in the future
+This project is a mere proof of concept and as such should be treated. It focuses on the moving pieces that a federated learning system contemplates rather than in model design, server strategies or even Android best practices. The important bit of security is also to be done.
 
-A very important outcome of this PoC is that it’s possible to use an Android device to train a (small) model with a (small) dataset. I have not doubts the restrictions we see today in the processing power and memory capacity will be vanishing as the technical specifications of our devices increase.
+I do think however there are enough attractive ideas in it to continue the development in the future
+
+A very important outcome of this PoC is that it’s possible to use an **Android device to train** a (small) model with a (small) dataset. I have not doubts the restrictions we see today in the processing power and memory capacity will be vanishing as the technical specifications of our devices increase.
 
 Training in the device opens an entire world of possibilities to IoT and mobile applications
 
@@ -20,7 +22,7 @@ First introduced by Google in April 2017, Federated Learning allows the clients 
 
 The following diagram, took from Google’s blog entry, shows the flow that lies behind the idea of Federated Learning
 
-![image alt text](image_0.png)
+![image alt text](art/image_0.png)
 
 Each client performs a training of the common model using local data (A). The updates to the local models are sent to a shared location (B) where they are processed generating a new model update that is, in turn, sent to all clients (C) 
 
@@ -86,7 +88,7 @@ The following table and points explain these assumptions
 
 ## Federated Client
 
-## The Federated Client is an Android application that trains a common model and upload the computed gradients to the federated server.
+The Federated Client is an Android application that trains a common model and upload the computed gradients to the federated server.
 
 The client decides when to update its local gradients by requesting a service to the server
 
@@ -102,7 +104,7 @@ In this PoC, the communication between the clients and the server is initiated b
 
 Process of the gradients coming from the clients is probably the most strategical decision in a federated learning system. The PoC implements a simple approach consisting on calculating the average of the gradient stored by the server with the incoming from the client
 
-![image alt text](image_1.png)
+![image alt text](art/image_1.png)
 
 # Encryption, security and privacy
 
@@ -132,9 +134,8 @@ The most important bits of code in the system are related to how the gradients a
 
 When the server receives a new gradient from a client, it executes the strategy to process it. In this PoC, this strategy consists on averaging the gradients.
 
-<table>
-  <tr>
-    <td>@Override
+```Java
+@Override
 public INDArray processGradient(INDArray averageFlattenGradient, INDArray gradient) {
    // Doing a very simple and not correct average
    // In real life, we would keep a map with the gradients sent by each model
@@ -150,34 +151,54 @@ public INDArray processGradient(INDArray averageFlattenGradient, INDArray gradie
        }
    }
    return averageFlattenGradient;
-}</td>
-  </tr>
-</table>
-
-
+}
+```
 When a client requests the gradient from the server, this is the piece of code that updates the weights (called params in DL4J) for every model
 
-<table>
-  <tr>
-    <td>@Override
+```Java
+<@Override
 public void updateWeights(INDArray remoteGradient) {
    Log.d(TAG, "Updating weights with INDArray object");
    INDArray params = model.params(true);
    params.addi(remoteGradient);
-}</td>
-  </tr>
-</table>
+}
+```
 
 
 # Installation and setup
 
-There are two different project in github to run this PoC:
+There are two different projects in github to run this PoC:
 
 * The server is located in [https://github.com/mccorby/FederatedServer](https://github.com/mccorby/FederatedServer)
 
 * The client is located in [https://github.com/mccorby/FederatedAndroidTrainer](https://github.com/mccorby/FederatedAndroidTrainer)
 
+I recommend to use IntelliJ for the server project. It is easier to run it from within this IDE
+
 Modify the config.json to point your clients to the IP address where the server will run
+
+There are currently two different models to train: Iris and Diabetes. The datasets for both of them are baked in into the application.
+
+A typical execution would be as follows:
+
+* Start the server by executing the class `JobQueueServer`. This class contains a `main` method that makes the server available in the port specified in its code
+  * If there is a conflict with the port, change it in this line
+  
+   `Server jettyServer = new Server(9998);`
+
+* Update the code of the client with the IP address of the server in the `config.json` file
+
+   `"server_url": "http://192.168.0.33:9998/",`
+
+* Choose the type of project in the `config.json`. Allowed values are `Iris` and `Diabetes`. More will be added soon
+
+   `"model": "Iris",`
+
+* There can be as many models as wanted in the app but to really feel how the federation of learners work it is better to install the app in different devices
+  
+* **Training only**
+
+  * For training only, just stop the server. The client app will use the entire data set to train the model
 
 # References
 
