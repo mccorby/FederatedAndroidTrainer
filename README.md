@@ -20,7 +20,7 @@ Training in the device opens an entire world of possibilities to IoT and mobile 
 
 First introduced by Google in April 2017, Federated Learning allows the clients (mobile devices) to learn how to make predictions by using a model that is trained collaboratively. Because each client uses its own set of data, there is no need to share it with a central server or other clients
 
-The following diagram, took from Google’s blog entry, shows the flow that lies behind the idea of Federated Learning
+The following diagram, taken from Google’s blog entry, shows the flow that lies behind the idea of Federated Learning
 
 ![image alt text](art/image_0.png)
 
@@ -118,7 +118,7 @@ The PoC would require a way of manipulating INDArrays using an HE implementation
 
 The application can be improved in a thousand ways. It is not thought as a showcase of Android good practices (though you can get a few nice ideas). I consider it is a draft at the moment of writing this document
 
-Since I consider this application as part of my curriculum, it will be improved in future iterations
+Since I consider this application part of my curriculum, it will be improved in future iterations
 
 The app has been architected using Clean Architecture and MVP for the presentation layer. There are open issues and branches to use Dependency Injection, move the rest of use cases still using callbacks to RxJava and a myriad of small details to polish and bring the app to a better state
 
@@ -156,7 +156,7 @@ public INDArray processGradient(INDArray averageFlattenGradient, INDArray gradie
 When a client requests the gradient from the server, this is the piece of code that updates the weights (called params in DL4J) for every model
 
 ```Java
-<@Override
+@Override
 public void updateWeights(INDArray remoteGradient) {
    Log.d(TAG, "Updating weights with INDArray object");
    INDArray params = model.params(true);
@@ -237,4 +237,6 @@ A typical execution would be as follows:
 * [https://github.com/mccorby/FederatedAndroidTrainer](https://github.com/mccorby/FederatedAndroidTrainer)
 
 * [https://github.com/mccorby/FederatedServer](https://github.com/mccorby/FederatedServer)
+
+
 
