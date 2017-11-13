@@ -1,6 +1,6 @@
 {
   "model": "Iris",
-  "server_url": "http://192.168.0.33:9998/",
+  "server_url": "http://192.168.0.70:9998/",
   "max_clients": 3,
   "batch_size": 150
 }

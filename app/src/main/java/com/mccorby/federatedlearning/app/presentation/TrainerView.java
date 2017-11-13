@@ -17,4 +17,8 @@ public interface TrainerView {
     void onPrediction(String message);
 
     void onTrainingStart(int modelNumber, int size);
+
+    void onRegisterStart();
+
+    void onRegisterDone();
 }

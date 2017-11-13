@@ -15,6 +15,7 @@ import com.mccorby.federatedlearning.core.domain.usecase.UseCase;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseCallback;
 import com.mccorby.federatedlearning.core.domain.usecase.UseCaseError;
 import com.mccorby.federatedlearning.core.executor.UseCaseExecutor;
+import com.mccorby.federatedlearning.core.executor.UseCaseThreadExecutor;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -24,40 +25,39 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.Scheduler;
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import io.reactivex.annotations.NonNull;
 import io.reactivex.observers.DisposableObserver;
 
 import static android.content.ContentValues.TAG;
 
-// TODO Reaching callback hell very soon. Think moving to RxJava
-// TODO Should FederatedModel be passed as a dependency or not?
 public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
     private final TrainerView view;
-    private final Scheduler postScheduler;
     private int dataSetSplits;
-    private final Scheduler originScheduler;
     private final FederatedRepository repository;
+    private UseCaseThreadExecutor threadExecutor;
     private ModelConfiguration modelConfiguration;
     private final UseCaseExecutor executor;
 
     private List<FederatedModel> models;
     private FederatedDataSet testDataSet;
 
+    @Inject
     public TrainerPresenter(TrainerView view,
                             ModelConfiguration modelConfiguration,
                             FederatedRepository repository,
                             UseCaseExecutor executor,
-                            Scheduler originScheduler,
-                            Scheduler postScheduler,
+                            UseCaseThreadExecutor threadExecutor,
+                            @Named("dataset_splits")
                             int dataSetSplits) {
         this.view = view;
         this.modelConfiguration = modelConfiguration;
         this.executor = executor;
         this.repository = repository;
-        this.originScheduler = originScheduler;
-        this.postScheduler = postScheduler;
+        this.threadExecutor = threadExecutor;
         this.dataSetSplits = dataSetSplits;
 
         models = new ArrayList<>();
@@ -94,7 +94,10 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
         }
 
         byte[] gradient = outputStream.toByteArray();
-        SendGradient sendGradient = new SendGradient(repository, gradient, originScheduler, postScheduler);
+        SendGradient sendGradient = new SendGradient(repository,
+                gradient,
+                threadExecutor.getOriginScheduler(),
+                threadExecutor.getPostScheduler());
         sendGradient.execute(new DisposableObserver<Boolean>() {
             @Override
             public void onNext(@NonNull Boolean aBoolean) {
@@ -115,7 +118,9 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
 
     // TODO This method does not correspond to this object
     public void getUpdatedGradient() {
-        RetrieveGradient retrieveGradient = new RetrieveGradient(repository, originScheduler, postScheduler);
+        RetrieveGradient retrieveGradient = new RetrieveGradient(repository,
+                threadExecutor.getOriginScheduler(),
+                threadExecutor.getPostScheduler());
         retrieveGradient.execute(new DisposableObserver<byte[]>() {
             @Override
             public void onNext(@NonNull byte[] gradient) {
@@ -145,15 +150,20 @@ public class TrainerPresenter implements UseCaseCallback<FederatedRepository>{
     }
 
     public void trainNewModel() {
-        Register register = new Register(repository, originScheduler, postScheduler);
+        Register register = new Register(repository,
+                threadExecutor.getOriginScheduler(),
+                threadExecutor.getPostScheduler());
+        view.onRegisterStart();
         register.execute(new DisposableObserver<Integer>() {
             @Override
             public void onNext(@NonNull Integer modelNumber) {
+                view.onRegisterDone();
                 train(modelNumber);
             }
 
             @Override
             public void onError(@NonNull Throwable e) {
+                view.onRegisterDone();
                 train(-1);
             }
 
