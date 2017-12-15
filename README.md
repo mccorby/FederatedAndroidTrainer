@@ -8,7 +8,7 @@ Ever since Google released the [paper](https://arxiv.org/pdf/1602.05629.pdf) and
 
 In my opinion, Federated Learning is one of the most interesting developments in Machine Learning in 2017. It brings training to the clients which means distributing the effort among millions of devices while adding a level of security and privacy to the data that it is one of the biggest concerns in certain fields as health care
 
-This project is a mere proof of concept and as such should be treated. It focuses on the moving pieces that a federated learning system contemplates rather than in model design, server strategies or even Android best practices. The important bit of security is also to be done.
+This project is a mere proof of concept and as such should be treated.
 
 I do think however there are enough attractive ideas in it to continue the development in the future
 
@@ -115,10 +115,6 @@ The PoC would require a way of manipulating INDArrays using an HE implementation
 # Implementation
 
 ## The Android Bit
-
-The application can be improved in a thousand ways. It is not thought as a showcase of Android good practices (though you can get a few nice ideas). I consider it is a draft at the moment of writing this document
-
-Since I consider this application part of my curriculum, it will be improved in future iterations
 
 The app has been architected using Clean Architecture and MVP for the presentation layer. There are open issues and branches to use Dependency Injection, move the rest of use cases still using callbacks to RxJava and a myriad of small details to polish and bring the app to a better state
 
