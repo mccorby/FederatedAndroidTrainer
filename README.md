@@ -1,3 +1,7 @@
+
+*A new more detailed version is now available at https://github.com/mccorby/PhotoLabeller*
+
+
 # Federated Learning with Android clients
 
 ## A naive approach
@@ -24,7 +28,7 @@ The following diagram, taken from Google’s blog entry, shows the flow that lie
 
 ![image alt text](art/image_0.png)
 
-Each client performs a training of the common model using local data (A). The updates to the local models are sent to a shared location (B) where they are processed generating a new model update that is, in turn, sent to all clients (C) 
+Each client performs a training of the common model using local data (A). The updates to the local models are sent to a shared location (B) where they are processed generating a new model update that is, in turn, sent to all clients (C)
 
 The original paper used Tensorflow to power the training in the clients. However, making Tensorflow work for training in a mobile device is not an easy task. It required the team that develop Federated Learning to create a specific version (Tensorflow Lite) and, probably, an entire native interface for the Android client to communicate with it
 
@@ -179,7 +183,7 @@ A typical execution would be as follows:
 
 * Start the server by executing the class `JobQueueServer`. This class contains a `main` method that makes the server available in the port specified in its code
   * If there is a conflict with the port, change it in this line
-  
+
    `Server jettyServer = new Server(9998);`
 
 * Update the code of the client with the IP address of the server in the `config.json` file
@@ -191,7 +195,7 @@ A typical execution would be as follows:
    `"model": "Iris",`
 
 * There can be as many models as wanted in the app but to really feel how the federation of learners work it is better to install the app in different devices
-  
+
 * **Training only**
 
   * For training only, just stop the server. The client app will use the entire data set to train the model
@@ -233,6 +237,3 @@ A typical execution would be as follows:
 * [https://github.com/mccorby/FederatedAndroidTrainer](https://github.com/mccorby/FederatedAndroidTrainer)
 
 * [https://github.com/mccorby/FederatedServer](https://github.com/mccorby/FederatedServer)
-
-
-
